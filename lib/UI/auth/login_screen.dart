@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:ptwins/UI/dashboard/screen/home_screen.dart';
 import '../widgets/custom_text_field.dart';
+import 'UI/dashboard/screen/home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,10 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-  color: Colors.white, // Fondo blanco o cambia a Color(0xFFF5F5F5) si querés gris suave
-),
-
-
+          color: Colors.white,
+        ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -96,8 +96,56 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      onPressed: () {
-                        // TODO: Conectar con backend (ASP.NET Core)
+                      onPressed: () async {
+                        final usuario = _userController.text.trim();
+                        final password = _passController.text.trim();
+
+                        if (usuario.isEmpty || password.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Por favor ingrese usuario y contraseña')),
+                          );
+                          return;
+                        }
+
+                        // Mostrar indicador de carga
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => Container(
+                            color: Colors.black.withOpacity(0.3),
+                            child: const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(color: Color(0xFF1A6B6B)),
+                                  SizedBox(height: 15),
+                                  Text(
+                                    "Iniciando sesión...",
+                                    style: TextStyle(color: Colors.white, fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+
+                        //validación del backend
+                        await Future.delayed(const Duration(seconds: 2));
+
+                        Navigator.pop(context); // Cierra el indicador de carga
+
+                        // Simulación de credenciales válidas
+                        if (usuario == 'admin' && password == '1234') {
+                          // Navegar al Home
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Usuario o contraseña incorrectos')),
+                          );
+                        }
                       },
                       child: const Text(
                         'Iniciar sesión',

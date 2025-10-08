@@ -19,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          color: Colors.white, // Fondo igual al login
+          color: Colors.white, 
         ),
         child: SafeArea(
           child: Center(
@@ -28,7 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Ícono superior igual que en login
                   const Icon(
                     Icons.app_registration_rounded,
                     size: 120,
@@ -67,7 +66,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Botón de registro con mismo estilo que login
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -88,7 +86,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       onPressed: () {
-                        // TODO: Agregar lógica de registro con backend
                       },
                       child: const Text(
                         'Registrarse',

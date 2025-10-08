@@ -15,17 +15,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // --- Cantidad de notificaciones ---
+  int notificationCount = 2; // Podés cambiarlo dinámicamente más adelante
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: accentColor,
 
+      // --- Drawer (menú lateral) ---
       drawer: Drawer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- Encabezado verde oscuro con avatar de imagen ---
             Container(
               color: const Color(0xFF004D40),
               padding: EdgeInsets.only(
@@ -78,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // --- Cerrar sesión fijo abajo ---
+            // --- Cerrar sesión ---
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(12),
@@ -87,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 text: 'Cerrar sesión',
                 onTap: () {
                   Navigator.pop(context);
-                  // Aquí puedes agregar la lógica de logout
+                  // Lógica de logout
                 },
               ),
             ),
@@ -95,27 +98,76 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
+      // --- AppBar ---
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => _scaffoldKey.currentState!.openDrawer(),
-        ),
         title: const Text(
-          "DASHBOARD",
+          "Centro de Control",
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
           ),
         ),
+        automaticallyImplyLeading: false,
         actions: [
-          IconButton(icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {}),
+          // --- Botón de notificaciones ---
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("No tienes notificaciones nuevas")),
+                  );
+                  setState(() {
+                    notificationCount = 0; // Limpia notificaciones al abrir
+                  });
+                },
+              ),
+              if (notificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$notificationCount',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          // --- Avatar del usuario (abre el Drawer) ---
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: GestureDetector(
+              onTap: () => _scaffoldKey.currentState!.openDrawer(),
+              child: Hero(
+                tag: 'userAvatar',
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.white,
+                  backgroundImage: const AssetImage('assets/images/Hombre.png'),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
 
+      // --- Contenido principal ---
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: GridView.count(
@@ -135,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- Tarjetas del Dashboard ---
+  // --- Tarjetas del menú principal ---
   Widget _buildCard(IconData icon, String title) {
     return GestureDetector(
       onTap: () => print('Navegando a: $title'),

@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- Encabezado verde oscuro ---
+            // --- Encabezado verde oscuro con avatar de imagen ---
             Container(
               color: const Color(0xFF004D40),
               padding: EdgeInsets.only(
@@ -35,10 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 45,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 45, color: Color(0xFF004D40)),
+                    backgroundImage: const AssetImage('assets/images/Hombre.png'),
                   ),
                   const SizedBox(height: 12),
                   const Text(
@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // --- Cerrar sesión fijo abajo ---
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(12),
@@ -86,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 text: 'Cerrar sesión',
                 onTap: () {
                   Navigator.pop(context);
+                  // Aquí puedes agregar la lógica de logout
                 },
               ),
             ),
@@ -133,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // --- Tarjetas del Dashboard ---
   Widget _buildCard(IconData icon, String title) {
     return GestureDetector(
       onTap: () => print('Navegando a: $title'),
@@ -169,6 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // --- Items del Drawer ---
   Widget _buildDrawerItem({required IconData icon, required String text, required VoidCallback onTap}) {
     return ListTile(
       leading: Icon(icon, color: Colors.black87),

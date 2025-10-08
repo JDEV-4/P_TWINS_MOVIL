@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'usersScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,8 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // --- Cantidad de notificaciones ---
-  int notificationCount = 2; // Podés cambiarlo dinámicamente más adelante
+  int notificationCount = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
       key: _scaffoldKey,
       backgroundColor: accentColor,
 
-      // --- Drawer (menú lateral) ---
       drawer: Drawer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -64,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // --- Opciones scrollables ---
             Expanded(
               child: Container(
                 color: Colors.white,
@@ -122,9 +120,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("No tienes notificaciones nuevas")),
                   );
-                  setState(() {
-                    notificationCount = 0; // Limpia notificaciones al abrir
-                  });
                 },
               ),
               if (notificationCount > 0)
@@ -190,7 +185,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- Tarjetas del menú principal ---
   Widget _buildCard(IconData icon, String title) {
     return GestureDetector(
-      onTap: () => print('Navegando a: $title'),
+      onTap: () {
+        if (title == "Usuarios") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UsersScreen()),
+          );
+        } else {
+          print('Navegando a: $title');
+        }
+      },
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

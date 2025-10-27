@@ -1,16 +1,18 @@
-# twins
+# Twins 🍭
 
-A new Flutter project.
+**Twins** es una aplicación Flutter desarrollada para la gestión y visualización de productos de la marca *Paletitas Twins*. Está diseñada con un enfoque educativo, modular y emocionalmente atractivo, ideal para entornos móviles modernos.
 
-## Getting Started
+## 🧠 Arquitectura
 
-This project is a starting point for a Flutter application.
+Este proyecto sigue una estructura en capas inspirada en **Clean Architecture**, lo que permite una separación clara de responsabilidades, escalabilidad y facilidad de mantenimiento. Las capas principales incluyen:
 
-A few resources to get you started if this is your first Flutter project:
+- **Domain**: Contiene las entidades, casos de uso y abstracciones del negocio.
+- **Data**: Implementa los contratos definidos en `domain`, incluyendo repositorios, fuentes locales y remotas.
+- **Presentation**: Maneja la interfaz de usuario, widgets, navegación y lógica visual.
+- **Core**: Incluye utilidades comunes, temas, constantes y configuraciones globales.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Esta organización permite que cada módulo evolucione de forma independiente, facilitando pruebas, animaciones personalizadas y una experiencia de usuario coherente.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🎨 Diseño y experiencia
+
+La interfaz está pensada para ser emocionalmente resonante, con transiciones animadas, personajes expresivos y una narrativa visual que conecta cada pantalla con la identidad de *Twins*. Se prioriza la accesibilidad, el color armonioso y la interacción intuitiva.

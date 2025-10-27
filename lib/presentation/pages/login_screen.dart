@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'home_screen.dart';
+import '../../data/http/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -13,9 +15,44 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   void _login() async {
+    final String usuario = _usuarioController.text.trim();
+    final String clave = _passwordController.text.trim();
+
+    if (usuario.isEmpty || clave.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, completa todos los campos')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
+
+    ApiService api = ApiService();
+    final result = await api.login(usuario, clave);
+
     setState(() => _isLoading = false);
+
+    if (result['success']) {
+      // Guardar token
+      await api.saveToken(result['token']);
+
+      // Navegar a HomeScreen
+      Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (context) => HomeScreen(
+      nombreUsuario: result['usuario'],
+      rolUsuario: result['rol'],
+      sexoUsuario: result['sexo'],
+    ),
+  ),
+);
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'])),
+      );
+    }
   }
 
   @override
@@ -28,7 +65,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Fondo con círculos decorativos
           Container(color: const Color(0xFFECEFF1)),
           Positioned(
             top: -50,
@@ -78,8 +114,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-
-          // Contenido con desplazamiento y animación al abrir el teclado
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: AnimatedPadding(
@@ -100,7 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // Tarjeta principal
                         Material(
                           elevation: 8,
                           borderRadius: BorderRadius.circular(28),
@@ -131,8 +164,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 36),
-
-                                // Campo usuario
                                 _buildTextField(
                                   controller: _usuarioController,
                                   label: "Usuario",
@@ -140,8 +171,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: kPrimario,
                                 ),
                                 const SizedBox(height: 20),
-
-                                // Campo contraseña
                                 _buildTextField(
                                   controller: _passwordController,
                                   label: "Contraseña",
@@ -150,8 +179,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   obscure: true,
                                 ),
                                 const SizedBox(height: 32),
-
-                                // Botón de inicio de sesión
                                 SizedBox(
                                   width: double.infinity,
                                   height: 52,
@@ -191,8 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                 ),
                                 const SizedBox(height: 16),
-
-                                // Enlace de recuperación
                                 TextButton(
                                   onPressed: () {},
                                   child: const Text(
@@ -204,8 +229,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-
-                        // Avatar flotante
                         Positioned(
                           top: -44,
                           left: 0,
@@ -250,7 +273,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Constructor de los TextFields personalizados
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

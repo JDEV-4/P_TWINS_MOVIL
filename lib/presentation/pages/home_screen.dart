@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final String nombreUsuario;
   final String rolUsuario;
   final String sexoUsuario;
@@ -14,17 +14,34 @@ class HomeScreen extends StatelessWidget {
   });
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _animate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Activar animación al construir
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (mounted) setState(() => _animate = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFFF55749);
-    const Color accentColor = Color(0xFFFDF7F6);
-    final String avatarAsset = sexoUsuario.toUpperCase() == 'H'
+    const Color primaryColor = Color(0xFFFF6B6B);
+    const Color accentColor = Color(0xFFFFF5F5);
+    const Color textColor = Color(0xFF333333);
+
+    final String avatarAsset = widget.sexoUsuario.toUpperCase() == 'H'
         ? 'assets/images/Hombre.png'
         : 'assets/images/Mujer.png';
 
-    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-
     void _selectSection(String section) {
-      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Sección seleccionada: $section'),
@@ -35,53 +52,50 @@ class HomeScreen extends StatelessWidget {
 
     Widget _drawerItem(String asset, String title, String section) {
       return ListTile(
-        leading: Image.asset(asset, width: 36, height: 36, fit: BoxFit.contain),
+        leading: Image.asset(asset, width: 32, height: 32, fit: BoxFit.contain),
         title: Text(
           title,
-          style: GoogleFonts.poppins(
-            fontSize: 15,
-            color: Colors.black87,
-          ),
+          style: GoogleFonts.poppins(fontSize: 15, color: textColor),
         ),
         onTap: () => _selectSection(section),
       );
     }
 
-    Widget _buildCard(String imageAsset, String title) {
-      return GestureDetector(
-        onTap: () => _selectSection(title),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.white, Colors.grey.shade100],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(imageAsset, width: 85, height: 85),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+    Widget _buildCard(String imageAsset, String title, int index) {
+      return _AnimatedCard(
+        delay: 100 * index,
+        animate: _animate,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          splashColor: primaryColor.withOpacity(0.1),
+          onTap: () => _selectSection(title),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
-              ),
-              
-            ],
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(imageAsset, width: 65, height: 65),
+                const SizedBox(height: 10),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -90,127 +104,110 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: accentColor,
-       drawer: Drawer(
-  backgroundColor: Colors.white,
-  child: SafeArea(
-    child: Column(
-      children: [
-        // Encabezado compacto
-        Container(
-          height: 90,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryColor, primaryColor.withOpacity(0.85)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          child: Row(
+      drawer: Drawer(
+        backgroundColor: Colors.white,
+        child: SafeArea(
+          child: Column(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundImage: AssetImage(avatarAsset),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Container(
+                height: 90,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [primaryColor, primaryColor.withOpacity(0.9)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                child: Row(
                   children: [
-                    Text(
-                      nombreUsuario,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundImage: AssetImage(avatarAsset),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      rolUsuario,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white70,
-                        fontSize: 13,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.nombreUsuario,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.rolUsuario,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-
-        //Lista principal (usamos Expanded + ListView para que el logout quede abajo)
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            children: [
-              _drawerItem('assets/images/Productos.png', 'Productos', 'Productos'),
-              _drawerItem('assets/images/Categorias.png', 'Categorías', 'Categorías'),
-              _drawerItem('assets/images/Ventas.png', 'Ventas', 'Ventas'),
-              _drawerItem('assets/images/Usuarios.png', 'Usuarios', 'Usuarios'),
-              _drawerItem('assets/images/Reportes.png', 'Reportes', 'Reportes'),
-              _drawerItem('assets/images/Ajustes.png', 'Ajustes', 'Ajustes'),
-            ],
-          ),
-        ),
-
-        //Botón de cierrar sesión
-        const Divider(height: 1, color: Colors.grey),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: ListTile(
-            leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: Text(
-              'Cerrar sesión',
-              style: GoogleFonts.poppins(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.w500,
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  children: [
+                    _drawerItem('assets/images/Productos.png', 'Productos', 'Productos'),
+                    _drawerItem('assets/images/Categorias.png', 'Categorías', 'Categorías'),
+                    _drawerItem('assets/images/Ventas.png', 'Ventas', 'Ventas'),
+                    _drawerItem('assets/images/Usuarios.png', 'Usuarios', 'Usuarios'),
+                    _drawerItem('assets/images/Reportes.png', 'Reportes', 'Reportes'),
+                    _drawerItem('assets/images/Ajustes.png', 'Ajustes', 'Ajustes'),
+                  ],
+                ),
               ),
-            ),
-            onTap: () {},
+              const Divider(height: 1, color: Colors.grey),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: Text(
+                  'Cerrar sesión',
+                  style: GoogleFonts.poppins(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {},
+              ),
+              const SizedBox(height: 8),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-      ],
-    ),
-  ),
-),
-
-
+      ),
       body: Stack(
         children: [
-          // Fondo con gradiente suave
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFFDECEA), Color(0xFFF8FDFC)],
+                colors: [Color(0xFFFFF8F8), Color(0xFFFFECEC)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
-
           Column(
             children: [
               SafeArea(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [primaryColor, primaryColor.withOpacity(0.85)],
+                      colors: [primaryColor, primaryColor.withOpacity(0.9)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -218,13 +215,6 @@ class HomeScreen extends StatelessWidget {
                       bottomLeft: Radius.circular(28),
                       bottomRight: Radius.circular(28),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -233,8 +223,8 @@ class HomeScreen extends StatelessWidget {
                         'Dashboard',
                         style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       Row(
@@ -251,7 +241,7 @@ class HomeScreen extends StatelessWidget {
                             icon: const Icon(
                               Icons.notifications_none,
                               color: Colors.white,
-                              size: 28,
+                              size: 26,
                             ),
                           ),
                           GestureDetector(
@@ -259,10 +249,10 @@ class HomeScreen extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 6),
                               child: CircleAvatar(
-                                radius: 24,
+                                radius: 23,
                                 backgroundColor: Colors.white.withOpacity(0.85),
                                 child: CircleAvatar(
-                                  radius: 22,
+                                  radius: 21,
                                   backgroundImage: AssetImage(avatarAsset),
                                 ),
                               ),
@@ -274,8 +264,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // GRID
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(18),
@@ -285,12 +273,12 @@ class HomeScreen extends StatelessWidget {
                     mainAxisSpacing: 18,
                     childAspectRatio: 1,
                     children: [
-                      _buildCard('assets/images/Productos.png', 'Productos'),
-                      _buildCard('assets/images/Categorias.png', 'Categorías'),
-                      _buildCard('assets/images/Ventas.png', 'Ventas'),
-                      _buildCard('assets/images/Usuarios.png', 'Usuarios'),
-                      _buildCard('assets/images/Reportes.png', 'Reportes'),
-                      _buildCard('assets/images/Ajustes.png', 'Ajustes'),
+                      _buildCard('assets/images/Productos.png', 'Productos', 0),
+                      _buildCard('assets/images/Categorias.png', 'Categorías', 1),
+                      _buildCard('assets/images/Ventas.png', 'Ventas', 2),
+                      _buildCard('assets/images/Usuarios.png', 'Usuarios', 3),
+                      _buildCard('assets/images/Reportes.png', 'Reportes', 4),
+                      _buildCard('assets/images/Ajustes.png', 'Ajustes', 5),
                     ],
                   ),
                 ),
@@ -298,6 +286,58 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Widget para animar las tarjetas
+class _AnimatedCard extends StatefulWidget {
+  final Widget child;
+  final int delay;
+  final bool animate;
+
+  const _AnimatedCard({
+    required this.child,
+    required this.delay,
+    required this.animate,
+  });
+
+  @override
+  State<_AnimatedCard> createState() => __AnimatedCardState();
+}
+
+class __AnimatedCardState extends State<_AnimatedCard>
+    with SingleTickerProviderStateMixin {
+  double _opacity = 0;
+  double _offsetY = 40;
+
+  @override
+  void didUpdateWidget(_AnimatedCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && _opacity == 0) {
+      Future.delayed(Duration(milliseconds: widget.delay), () {
+        if (mounted) {
+          setState(() {
+            _opacity = 1;
+            _offsetY = 0;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 500),
+      opacity: _opacity,
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+        transform: Matrix4.translationValues(0, _offsetY, 0),
+        child: widget.child,
       ),
     );
   }

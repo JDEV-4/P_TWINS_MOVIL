@@ -14,8 +14,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = const Color(0xFF006D65);
-    final Color accentColor = const Color(0xFFF1F8F6);
+    const Color primaryColor = Color.fromARGB(255, 245, 87, 73);
+    const Color accentColor = Color(0xFFF1F8F6);
 
     final String avatarAsset = sexoUsuario.toUpperCase() == 'H'
         ? 'assets/images/Hombre.png'
@@ -37,15 +37,75 @@ class HomeScreen extends StatelessWidget {
       return ListTile(
         leading: Image.asset(
           asset,
-          width: 100,  // antes 24
-          height: 100, 
+          width: 40,
+          height: 40,
           fit: BoxFit.contain,
         ),
-        title: Text(title, style: const TextStyle(fontSize: 16)),
+        title: Text(title,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            )),
         onTap: () => _selectSection(section),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       );
     }
+
+    Widget _buildCard(String imageAsset, String title) {
+      return GestureDetector(
+        onTap: () {},
+        child: TweenAnimationBuilder(
+          tween: Tween<double>(begin: 1.0, end: 1.0),
+          duration: const Duration(milliseconds: 200),
+          builder: (context, double scale, child) {
+            return Transform.scale(
+              scale: scale,
+              child: child,
+            );
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  imageAsset,
+                  width: 90, // aumentamos tamaño
+                  height: 90, // aumentamos tamaño
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget _circleDecoration(double size, Color color) => Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        );
 
     return Scaffold(
       key: _scaffoldKey,
@@ -55,7 +115,20 @@ class HomeScreen extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: primaryColor),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -66,11 +139,14 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     nombreUsuario,
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                    style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
                   Text(
                     rolUsuario,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    style: const TextStyle(color: Colors.black54, fontSize: 14),
                   ),
                 ],
               ),
@@ -84,129 +160,116 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: Column(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          // HEADER CON "Dashboard", AVATAR Y CAMPANA
-          SafeArea(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [primaryColor, primaryColor.withOpacity(0.9)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'Dashboard',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No hay nuevas notificaciones'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      _scaffoldKey.currentState?.openDrawer();
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.25),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.white,
-                        child: CircleAvatar(
-                          radius: 23,
-                          backgroundImage: AssetImage(avatarAsset),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Círculos decorativos
+          Positioned(top: -50, left: -50, child: _circleDecoration(150, Colors.white.withOpacity(0.15))),
+          Positioned(top: 100, right: -40, child: _circleDecoration(120, Colors.white.withOpacity(0.10))),
+          Positioned(bottom: -60, left: -30, child: _circleDecoration(180, Colors.white.withOpacity(0.12))),
+          Positioned(bottom: -80, right: -60, child: _circleDecoration(220, Colors.white.withOpacity(0.08))),
 
-          // GRID DE TARJETAS
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1,
-                children: [
-                  _buildCardImage('assets/images/Productos.png'),
-                  _buildCardImage('assets/images/Categorias.png'),
-                  _buildCardImage('assets/images/Ventas.png'),
-                  _buildCardImage('assets/images/Usuarios.png'),
-                  _buildCardImage('assets/images/Reportes.png'),
-                  _buildCardImage('assets/images/Ajustes.png'),
-                ],
+          Column(
+            children: [
+              // HEADER
+              SafeArea(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [primaryColor, primaryColor.withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No hay nuevas notificaciones'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          _scaffoldKey.currentState?.openDrawer();
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26.withOpacity(0.15),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 25,
+                            backgroundColor: Colors.white.withOpacity(0.85),
+                            child: CircleAvatar(
+                              radius: 23,
+                              backgroundImage: AssetImage(avatarAsset),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+
+              // GRID DE TARJETAS
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1,
+                    children: [
+                      _buildCard('assets/images/Productos.png', 'Productos'),
+                      _buildCard('assets/images/Categorias.png', 'Categorías'),
+                      _buildCard('assets/images/Ventas.png', 'Ventas'),
+                      _buildCard('assets/images/Usuarios.png', 'Usuarios'),
+                      _buildCard('assets/images/Reportes.png', 'Reportes'),
+                      _buildCard('assets/images/Ajustes.png', 'Ajustes'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCardImage(String imageAsset) {
-    return GestureDetector(
-      onTap: () {},
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Image.asset(
-            imageAsset,
-            width: 160,
-            height: 160,
-            fit: BoxFit.contain,
-          ),
-        ),
       ),
     );
   }

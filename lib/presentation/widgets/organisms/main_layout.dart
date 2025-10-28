@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../pages/home_screen.dart';
-import '../../pages/usersscreen.dart';
+import '../../pages/user_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final String nombreUsuario;

@@ -10,12 +10,40 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   final TextEditingController _usuarioController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _keyboardVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _usuarioController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  //Detecta cuando aparece o desaparece el teclado
+  @override
+  void didChangeMetrics() {
+    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+    final newValue = bottomInset > 0.0;
+    if (newValue != _keyboardVisible) {
+      setState(() => _keyboardVisible = newValue);
+    }
+  }
 
   void _login() async {
+    //Ocultar teclado al presionar el botón
+    FocusScope.of(context).unfocus();
+
     final String usuario = _usuarioController.text.trim();
     final String clave = _passwordController.text.trim();
 
@@ -35,6 +63,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result['success']) {
       await api.saveToken(result['token']);
+
+      // Espera un momento para que la card baje antes de navegar
+      await Future.delayed(const Duration(milliseconds: 150));
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -93,10 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: AnimatedPadding(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).viewInsets.bottom > 0 ? 80 : 210,
+                top: _keyboardVisible ? 80 : 210,
                 bottom: 100,
               ),
               child: Column(
@@ -110,12 +142,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // Card
+                        // Card principal
                         Container(
                           padding: const EdgeInsets.fromLTRB(28, 64, 28, 28),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(28),
-                            color: Colors.white.withOpacity(0.85), //blanca
+                            color: Colors.white.withOpacity(0.85),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black26.withOpacity(0.08),
@@ -268,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5), 
+        color: Colors.white.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: TextField(

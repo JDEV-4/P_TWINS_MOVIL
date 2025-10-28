@@ -17,7 +17,7 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.9.0
   shared_preferences: ^2.1.1
-
+  google_fonts: ^6.2.1  
 
 dev_dependencies:
   flutter_test:
@@ -34,3 +34,6 @@ flutter:
   fonts:
     - family: NotoSans
       fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700

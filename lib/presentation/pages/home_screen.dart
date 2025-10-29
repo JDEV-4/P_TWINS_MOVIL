@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../presentation/pages/producto_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String nombreUsuario;
@@ -31,6 +32,23 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  void _selectSection(String section) {
+    // Navegación a ProductoScreen
+    if (section == 'Productos') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProductoScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sección seleccionada: $section'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFFFF6B6B);
@@ -41,15 +59,6 @@ class _HomeScreenState extends State<HomeScreen>
         ? 'assets/images/Hombre.png'
         : 'assets/images/Mujer.png';
 
-    void _selectSection(String section) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sección seleccionada: $section'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
-
     Widget _drawerItem(String asset, String title, String section) {
       return ListTile(
         leading: Image.asset(asset, width: 32, height: 32, fit: BoxFit.contain),
@@ -57,7 +66,10 @@ class _HomeScreenState extends State<HomeScreen>
           title,
           style: GoogleFonts.poppins(fontSize: 15, color: textColor),
         ),
-        onTap: () => _selectSection(section),
+        onTap: () {
+          Navigator.pop(context); // Cierra el drawer
+          _selectSection(section);
+        },
       );
     }
 
@@ -291,7 +303,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
+// -----------------------
 // Widget para animar las tarjetas
+// -----------------------
 class _AnimatedCard extends StatefulWidget {
   final Widget child;
   final int delay;

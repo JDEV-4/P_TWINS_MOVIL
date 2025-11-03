@@ -30,12 +30,11 @@ class _ProductoScreenState extends State<ProductoScreen> {
 
   Future<void> _cargarProductos() async {
     if (isLoading || !hasMore) return;
-
     setState(() => isLoading = true);
+
     try {
       final nuevosProductos =
           await controller.fetchProductos(pageNumber, pageSize);
-
       setState(() {
         productos.addAll(nuevosProductos);
         pageNumber++;
@@ -53,7 +52,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
 
-  // --- BottomSheet minimalista ---
+  // --- Detalles del producto ---
   void _mostrarDetalles(ProductoEntity p) {
     showModalBottomSheet(
       context: context,
@@ -76,7 +75,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Barra superior
                     Center(
                       child: Container(
                         width: 50,
@@ -88,7 +86,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
                         ),
                       ),
                     ),
-                    // Nombre del producto
                     Text(
                       p.nombre,
                       style: const TextStyle(
@@ -99,7 +96,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Descripción
                     Text(
                       p.descripcion ?? '-',
                       style: const TextStyle(
@@ -111,18 +107,10 @@ class _ProductoScreenState extends State<ProductoScreen> {
                     const SizedBox(height: 20),
                     const Divider(thickness: 1),
                     const SizedBox(height: 10),
-                    // Información tipo tabla
                     _detalleCampo('Categoría', p.categoria),
                     _detalleCampo('Almacén', p.almacen),
                     _detalleCampo('Ubicación', p.ubicacion),
                     _detalleCampo('Existencia', p.existencia?.toString()),
-                    _detalleCampo('Precio Compra',
-                        p.precioCompra != null ? '\$${p.precioCompra!.toStringAsFixed(2)}' : '-'),
-                    _detalleCampo('Precio Venta',
-                        p.precioVenta != null ? '\$${p.precioVenta!.toStringAsFixed(2)}' : '-'),
-                    _detalleCampo('Lote', p.lote),
-                    _detalleCampo('Fecha Entrada', formatDate(p.fechaEntrada)),
-                    _detalleCampo('Fecha Vencimiento', formatDate(p.fechaVencimiento)),
                     _detalleCampo('Estado Stock', p.estadoStock),
                     _detalleCampo('Estado Producto', p.estadoProducto),
                     const SizedBox(height: 20),
@@ -136,7 +124,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
     );
   }
 
-  // Widget para filas tipo tabla
   Widget _detalleCampo(String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -164,6 +151,146 @@ class _ProductoScreenState extends State<ProductoScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // --- FORMULARIO AGREGAR PRODUCTO MODERNIZADO ---
+  void _mostrarFormularioAgregar() {
+    final nombreController = TextEditingController();
+    final descripcionController = TextEditingController();
+    final categoriaController = TextEditingController();
+    final almacenController = TextEditingController();
+    final ubicacionController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 6,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  const Text(
+                    'Agregar Producto',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF6B81),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInputField(nombreController, 'Nombre'),
+                  _buildInputField(descripcionController, 'Descripción'),
+                  _buildInputField(categoriaController, 'Categoría'),
+                  _buildInputField(almacenController, 'Almacén'),
+                  _buildInputField(ubicacionController, 'Ubicación'),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6B81),
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () async {
+                      final nuevoProducto = ProductoEntity(
+                        nombre: nombreController.text,
+                        descripcion: descripcionController.text,
+                        categoria: categoriaController.text,
+                        almacen: almacenController.text,
+                        ubicacion: ubicacionController.text,
+                        precioCompra: 0.0,
+                        precioVenta: 0.0,
+                        lote: '',
+                        fechaEntrada: null,
+                        fechaVencimiento: null,
+                        estadoProducto: 'Activo',
+                        existencia: 0,
+                        estadoStock: 'Disponible',
+                      );
+
+                      try {
+                        final mensaje = await controller.crearProducto(nuevoProducto);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(mensaje)),
+                        );
+                        Navigator.pop(context);
+
+                        setState(() {
+                          productos.clear();
+                          pageNumber = 1;
+                          hasMore = true;
+                          _cargarProductos();
+                        });
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    },
+                    child: const Text(
+                      'Agregar Producto',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInputField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Color(0xFFFF6B81)),
+          filled: true,
+          fillColor: Colors.grey[100],
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFFF6B81), width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+          ),
+        ),
       ),
     );
   }
@@ -209,14 +336,11 @@ class _ProductoScreenState extends State<ProductoScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     color: Colors.white,
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 8, horizontal: 4),
+                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       child: Row(
                         children: [
-                          // Izquierda: título + descripción + categoría
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,8 +368,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                                 const SizedBox(height: 6),
                                 if (p.categoria != null)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 2, horizontal: 6),
+                                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFE5E8),
                                       borderRadius: BorderRadius.circular(8),
@@ -263,10 +386,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                               ],
                             ),
                           ),
-
                           const SizedBox(width: 12),
-
-                          // Derecha: precio + botón ojo
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -289,9 +409,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                                 child: IconButton(
                                   padding: EdgeInsets.zero,
                                   iconSize: 24,
-                                  icon: const Icon(
-                                      Icons.remove_red_eye_outlined,
-                                      color: Colors.grey),
+                                  icon: const Icon(Icons.remove_red_eye_outlined, color: Colors.grey),
                                   onPressed: () => _mostrarDetalles(p),
                                 ),
                               ),
@@ -311,6 +429,11 @@ class _ProductoScreenState extends State<ProductoScreen> {
               child: CircularProgressIndicator(color: Color(0xFFFF6B81)),
             ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFFF6B81),
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: _mostrarFormularioAgregar,
       ),
     );
   }

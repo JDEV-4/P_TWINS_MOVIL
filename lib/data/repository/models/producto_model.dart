@@ -33,23 +33,30 @@ class ProductoModel {
   });
 
   factory ProductoModel.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(String? dateStr) {
+      if (dateStr == null || dateStr.isEmpty) return null;
+      return DateTime.tryParse(dateStr);
+    }
+
     return ProductoModel(
-      nombre: json['producto'] ?? '-',                // JSON 'producto' -> nombre
+      nombre: json['producto'] ?? '-',
       descripcion: json['descripcion'] ?? '-',
       estadoProducto: json['estadoProducto'] ?? '-',
       categoria: json['categoria'] ?? '-',
       almacen: json['almacen'] ?? '-',
       ubicacion: json['ubicacion'] ?? '-',
-      existencia: json['existencia'] ?? 0,
-      precioCompra: (json['precio_Compra'] as num?)?.toDouble() ?? 0.0, // JSON 'precio_Compra' -> precioCompra
-      precioVenta: (json['precio_Venta'] as num?)?.toDouble() ?? 0.0,   // JSON 'precio_Venta' -> precioVenta
+      existencia: json['existencia'] != null
+          ? int.tryParse(json['existencia'].toString()) ?? 0
+          : 0,
+      precioCompra: json['precio_Compra'] != null
+          ? double.tryParse(json['precio_Compra'].toString()) ?? 0.0
+          : 0.0,
+      precioVenta: json['precio_Venta'] != null
+          ? double.tryParse(json['precio_Venta'].toString()) ?? 0.0
+          : 0.0,
       lote: json['lote'] ?? '-',
-      fechaEntrada: json['fecha_Entrada'] != null
-          ? DateTime.parse(json['fecha_Entrada'])
-          : null,
-      fechaVencimiento: json['fecha_Vencimiento'] != null
-          ? DateTime.parse(json['fecha_Vencimiento'])
-          : null,
+      fechaEntrada: parseDate(json['fecha_Entrada']),
+      fechaVencimiento: parseDate(json['fecha_Vencimiento']),
       estadoStock: json['estadoStock'] ?? '-',
     );
   }

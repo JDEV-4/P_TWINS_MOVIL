@@ -1,11 +1,15 @@
+// lib/data/http/producto_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../repository/models/producto_model.dart';
+import '../repository/models/producto_response_model.dart';
+import '../repository/models/producto_create_request.dart';
+import '../../domain/entities/producto_entity.dart';
 
 class ProductoService {
   final String baseUrl;
 
-  ProductoService({this.baseUrl = 'http://192.168.1.80:5138'});
+  ProductoService({this.baseUrl = 'http://192.168.1.82:5138'});
 
   Future<List<ProductoModel>> obtenerProductosActivos(int pageNumber, int pageSize) async {
     final response = await http.get(
@@ -18,6 +22,31 @@ class ProductoService {
       return data.map((item) => ProductoModel.fromJson(item)).toList();
     } else {
       throw Exception('Error al cargar productos');
+    }
+  }
+
+  Future<ProductoResponseModel> crearProducto(ProductoEntity producto) async {
+    final request = ProductoCreateRequest(
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      estadoProducto: producto.estadoProducto,
+      categoria: producto.categoria,
+      almacen: producto.almacen,
+      ubicacion: producto.ubicacion,
+      existencia: producto.existencia,
+      estadoStock: producto.estadoStock,
+    );
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/Producto'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(request.toJson()),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return ProductoResponseModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Error al crear producto');
     }
   }
 }

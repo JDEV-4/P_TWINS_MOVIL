@@ -49,4 +49,16 @@ class ProductoService {
       throw Exception('Error al crear producto');
     }
   }
+
+Future<List<String>> obtenerCategorias() async {
+  final response = await http.get(Uri.parse('$baseUrl/api/Producto/categorias'));
+
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    return data.map((item) => item['nombre'].toString()).toList();
+  } else {
+    throw Exception('Error al cargar categorías');
+  }
+}
+
 }

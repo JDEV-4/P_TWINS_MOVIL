@@ -3,6 +3,7 @@ import '../../domain/entities/producto_entity.dart';
 import '../../domain/usecases/get_productos_activos.dart';
 import '../controllers/producto_controller.dart';
 import '../../data/repository/producto_repository_impl.dart';
+import '../../domain/usecases/get_categorias.dart';
 
 class ProductoScreen extends StatefulWidget {
   const ProductoScreen({super.key});
@@ -19,13 +20,23 @@ class _ProductoScreenState extends State<ProductoScreen> {
   bool isLoading = false;
   bool hasMore = true;
 
+  // --- Categorías ---
+  List<String> categorias = [];
+  String? categoriaSeleccionada;
+  bool isLoadingCategorias = true;
+
   @override
   void initState() {
     super.initState();
     final repository = ProductoRepositoryImpl();
     final getProductosActivos = GetProductosActivos(repository);
-    controller = ProductoController(getProductosActivos: getProductosActivos);
+    controller = ProductoController(
+      getProductosActivos: getProductosActivos,
+      repository: repository,
+    );
+
     _cargarProductos();
+    _cargarCategorias();
   }
 
   Future<void> _cargarProductos() async {
@@ -44,6 +55,19 @@ class _ProductoScreenState extends State<ProductoScreen> {
       debugPrint('Error al cargar productos: $e');
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _cargarCategorias() async {
+    try {
+      categorias = await controller.fetchCategorias();
+      if (categorias.isNotEmpty) {
+        categoriaSeleccionada = categorias.first;
+      }
+    } catch (e) {
+      debugPrint('Error al cargar categorías: $e');
+    } finally {
+      setState(() => isLoadingCategorias = false);
     }
   }
 
@@ -155,11 +179,10 @@ class _ProductoScreenState extends State<ProductoScreen> {
     );
   }
 
-  // --- FORMULARIO AGREGAR PRODUCTO MODERNIZADO ---
+  // --- FORMULARIO AGREGAR PRODUCTO ---
   void _mostrarFormularioAgregar() {
     final nombreController = TextEditingController();
     final descripcionController = TextEditingController();
-    final categoriaController = TextEditingController();
     final almacenController = TextEditingController();
     final ubicacionController = TextEditingController();
 
@@ -209,7 +232,41 @@ class _ProductoScreenState extends State<ProductoScreen> {
                   const SizedBox(height: 16),
                   _buildInputField(nombreController, 'Nombre'),
                   _buildInputField(descripcionController, 'Descripción'),
-                  _buildInputField(categoriaController, 'Categoría'),
+
+                  // Dropdown Categorías
+                  isLoadingCategorias
+                      ? const CircularProgressIndicator()
+                      : DropdownButtonFormField<String>(
+                          value: categoriaSeleccionada,
+                          decoration: InputDecoration(
+                            labelText: 'Categoría',
+                            labelStyle: const TextStyle(color: Color(0xFFFF6B81)),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFFFF6B81), width: 2),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                                  BorderSide(color: Colors.grey[300]!, width: 1),
+                            ),
+                          ),
+                          items: categorias
+                              .map((cat) => DropdownMenuItem(
+                                    value: cat,
+                                    child: Text(cat),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              categoriaSeleccionada = value;
+                            });
+                          },
+                        ),
+
                   _buildInputField(almacenController, 'Almacén'),
                   _buildInputField(ubicacionController, 'Ubicación'),
                   const SizedBox(height: 24),
@@ -225,7 +282,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                       final nuevoProducto = ProductoEntity(
                         nombre: nombreController.text,
                         descripcion: descripcionController.text,
-                        categoria: categoriaController.text,
+                        categoria: categoriaSeleccionada ?? '',
                         almacen: almacenController.text,
                         ubicacion: ubicacionController.text,
                         precioCompra: 0.0,
@@ -239,7 +296,8 @@ class _ProductoScreenState extends State<ProductoScreen> {
                       );
 
                       try {
-                        final mensaje = await controller.crearProducto(nuevoProducto);
+                        final mensaje =
+                            await controller.crearProducto(nuevoProducto);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(mensaje)),
                         );
@@ -368,7 +426,8 @@ class _ProductoScreenState extends State<ProductoScreen> {
                                 const SizedBox(height: 6),
                                 if (p.categoria != null)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 2, horizontal: 6),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFE5E8),
                                       borderRadius: BorderRadius.circular(8),
@@ -409,7 +468,8 @@ class _ProductoScreenState extends State<ProductoScreen> {
                                 child: IconButton(
                                   padding: EdgeInsets.zero,
                                   iconSize: 24,
-                                  icon: const Icon(Icons.remove_red_eye_outlined, color: Colors.grey),
+                                  icon: const Icon(Icons.remove_red_eye_outlined,
+                                      color: Colors.grey),
                                   onPressed: () => _mostrarDetalles(p),
                                 ),
                               ),

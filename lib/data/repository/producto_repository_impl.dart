@@ -21,4 +21,9 @@ class ProductoRepositoryImpl implements ProductoRepository {
   Future<ProductoResponseModel> crearProducto(ProductoEntity producto) async {
     return await service.crearProducto(producto);
   }
+
+  Future<List<String>> obtenerCategorias() async {
+  return await service.obtenerCategorias();
+}
+
 }

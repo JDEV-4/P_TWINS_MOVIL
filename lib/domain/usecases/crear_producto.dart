@@ -7,7 +7,7 @@ class CrearProducto {
 
   CrearProducto(this.repository);
 
-  Future<ProductoResponseModel> execute(ProductoEntity producto) async {
-    return await repository.crearProducto(producto);
+  Future<ProductoResponseModel> execute(ProductoEntity producto) {
+    return repository.crearProducto(producto);
   }
 }

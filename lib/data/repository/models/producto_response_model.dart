@@ -10,8 +10,8 @@ class ProductoResponseModel {
 
   factory ProductoResponseModel.fromJson(Map<String, dynamic> json) {
     return ProductoResponseModel(
-      mensaje: json['message'] ?? '', // mapeamos 'message' del JSON a 'mensaje'
-      exito: json['success'] ?? false, // mapeamos 'success' del JSON a 'exito'
+      mensaje: json['message'] ?? '', 
+      exito: json['success'] ?? false, 
     );
   }
 }

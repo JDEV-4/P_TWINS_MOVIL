@@ -13,21 +13,28 @@ class ProductoScreen extends StatefulWidget {
 }
 
 class _ProductoScreenState extends State<ProductoScreen> {
+  // ----- Controlador -----
   late ProductoController controller;
+
+  // ----- Productos -----
   List<ProductoEntity> productos = [];
   int pageNumber = 1;
   final int pageSize = 5;
   bool isLoading = false;
   bool hasMore = true;
 
-  // --- Categorías ---
+  // ----- Categorías -----
   List<String> categorias = [];
   String? categoriaSeleccionada;
   bool isLoadingCategorias = true;
 
+  // ----- Scroll controller -----
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+
     final repository = ProductoRepositoryImpl();
     final getProductosActivos = GetProductosActivos(repository);
     controller = ProductoController(
@@ -37,7 +44,25 @@ class _ProductoScreenState extends State<ProductoScreen> {
 
     _cargarProductos();
     _cargarCategorias();
+
+    // Detectar scroll para paginación
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 50 &&
+          !isLoading &&
+          hasMore) {
+        _cargarProductos();
+      }
+    });
   }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // -------------------- FUNCIONES --------------------
 
   Future<void> _cargarProductos() async {
     if (isLoading || !hasMore) return;
@@ -58,6 +83,15 @@ class _ProductoScreenState extends State<ProductoScreen> {
     }
   }
 
+  Future<void> _refrescarProductos() async {
+    setState(() {
+      productos.clear();
+      pageNumber = 1;
+      hasMore = true;
+    });
+    await _cargarProductos();
+  }
+
   Future<void> _cargarCategorias() async {
     try {
       categorias = await controller.fetchCategorias();
@@ -71,12 +105,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
     }
   }
 
-  String formatDate(DateTime? date) {
-    if (date == null) return '-';
-    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-  }
-
-  // --- Detalles del producto ---
   void _mostrarDetalles(ProductoEntity p) {
     showModalBottomSheet(
       context: context,
@@ -121,7 +149,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      p.descripcion ?? '-',
+                      p.descripcion,
                       style: const TextStyle(
                         fontFamily: 'NotoSans',
                         fontSize: 16,
@@ -132,9 +160,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                     const Divider(thickness: 1),
                     const SizedBox(height: 10),
                     _detalleCampo('Categoría', p.categoria),
-                    _detalleCampo('Almacén', p.almacen),
-                    _detalleCampo('Ubicación', p.ubicacion),
-                    _detalleCampo('Existencia', p.existencia?.toString()),
+                    _detalleCampo('Existencia', p.existencia.toString()),
                     _detalleCampo('Estado Stock', p.estadoStock),
                     _detalleCampo('Estado Producto', p.estadoProducto),
                     const SizedBox(height: 20),
@@ -148,7 +174,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
     );
   }
 
-  Widget _detalleCampo(String label, String? value) {
+  Widget _detalleCampo(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -167,7 +193,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
           Expanded(
             flex: 5,
             child: Text(
-              value ?? '-',
+              value.isNotEmpty ? value : '-',
               style: const TextStyle(
                 fontFamily: 'NotoSans',
                 fontSize: 14,
@@ -179,12 +205,9 @@ class _ProductoScreenState extends State<ProductoScreen> {
     );
   }
 
-  // --- FORMULARIO AGREGAR PRODUCTO ---
   void _mostrarFormularioAgregar() {
     final nombreController = TextEditingController();
     final descripcionController = TextEditingController();
-    final almacenController = TextEditingController();
-    final ubicacionController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -198,7 +221,8 @@ class _ProductoScreenState extends State<ProductoScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.3),
@@ -233,27 +257,12 @@ class _ProductoScreenState extends State<ProductoScreen> {
                   _buildInputField(nombreController, 'Nombre'),
                   _buildInputField(descripcionController, 'Descripción'),
 
-                  // Dropdown Categorías
+                  // ---- Dropdown Categoría ----
                   isLoadingCategorias
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator(color: Color(0xFFFF6B81))
                       : DropdownButtonFormField<String>(
                           value: categoriaSeleccionada,
-                          decoration: InputDecoration(
-                            labelText: 'Categoría',
-                            labelStyle: const TextStyle(color: Color(0xFFFF6B81)),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFFFF6B81), width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                                  BorderSide(color: Colors.grey[300]!, width: 1),
-                            ),
-                          ),
+                          decoration: _inputDecoration('Categoría'),
                           items: categorias
                               .map((cat) => DropdownMenuItem(
                                     value: cat,
@@ -261,15 +270,12 @@ class _ProductoScreenState extends State<ProductoScreen> {
                                   ))
                               .toList(),
                           onChanged: (value) {
-                            setState(() {
-                              categoriaSeleccionada = value;
-                            });
+                            setState(() => categoriaSeleccionada = value);
                           },
                         ),
-
-                  _buildInputField(almacenController, 'Almacén'),
-                  _buildInputField(ubicacionController, 'Ubicación'),
                   const SizedBox(height: 24),
+
+                  // ---- Botón Guardar ----
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF6B81),
@@ -283,8 +289,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
                         nombre: nombreController.text,
                         descripcion: descripcionController.text,
                         categoria: categoriaSeleccionada ?? '',
-                        almacen: almacenController.text,
-                        ubicacion: ubicacionController.text,
                         precioCompra: 0.0,
                         precioVenta: 0.0,
                         lote: '',
@@ -303,12 +307,8 @@ class _ProductoScreenState extends State<ProductoScreen> {
                         );
                         Navigator.pop(context);
 
-                        setState(() {
-                          productos.clear();
-                          pageNumber = 1;
-                          hasMore = true;
-                          _cargarProductos();
-                        });
+                        // 🔹 Esperar recarga de productos
+                        await _refrescarProductos();
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Error: $e')),
@@ -330,28 +330,34 @@ class _ProductoScreenState extends State<ProductoScreen> {
     );
   }
 
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFFFF6B81)),
+      filled: true,
+      fillColor: Colors.grey[100],
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFFF6B81), width: 2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+      ),
+    );
+  }
+
   Widget _buildInputField(TextEditingController controller, String label) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFFFF6B81)),
-          filled: true,
-          fillColor: Colors.grey[100],
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFFF6B81), width: 2),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-          ),
-        ),
+        decoration: _inputDecoration(label),
       ),
     );
   }
+
+  // -------------------- BUILD --------------------
 
   @override
   Widget build(BuildContext context) {
@@ -370,125 +376,116 @@ class _ProductoScreenState extends State<ProductoScreen> {
         elevation: 2,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (scrollInfo) {
-                if (!isLoading &&
-                    scrollInfo.metrics.pixels >=
-                        scrollInfo.metrics.maxScrollExtent - 50) {
-                  _cargarProductos();
-                  return true;
-                }
-                return false;
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(10),
-                itemCount: productos.length,
-                itemBuilder: (context, index) {
-                  final p = productos[index];
-                  return Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    color: Colors.white,
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      child: Row(
+      body: RefreshIndicator(
+        color: const Color(0xFFFF6B81),
+        onRefresh: _refrescarProductos,
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(10),
+          itemCount: productos.length + (isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == productos.length) {
+              return const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFFFF6B81)),
+                ),
+              );
+            }
+
+            final p = productos[index];
+            return Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  p.nombre,
-                                  style: const TextStyle(
-                                    fontFamily: 'NotoSans',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFFFF6B81),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  p.descripcion ?? '-',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontFamily: 'NotoSans',
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                if (p.categoria != null)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 2, horizontal: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFE5E8),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      p.categoria!,
-                                      style: const TextStyle(
-                                        fontFamily: 'NotoSans',
-                                        fontSize: 12,
-                                        color: Color(0xFFFF6B81),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                          Text(
+                            p.nombre,
+                            style: const TextStyle(
+                              fontFamily: 'NotoSans',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color(0xFFFF6B81),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '\$${p.precioVenta?.toStringAsFixed(2) ?? '-'}',
-                                style: const TextStyle(
-                                  fontFamily: 'NotoSans',
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 18,
-                                  color: Colors.green,
-                                ),
+                          const SizedBox(height: 4),
+                          Text(
+                            p.descripcion,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'NotoSans',
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 2, horizontal: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFE5E8),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              p.categoria,
+                              style: const TextStyle(
+                                fontFamily: 'NotoSans',
+                                fontSize: 12,
+                                color: Color(0xFFFF6B81),
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 6),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  iconSize: 24,
-                                  icon: const Icon(Icons.remove_red_eye_outlined,
-                                      color: Colors.grey),
-                                  onPressed: () => _mostrarDetalles(p),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(width: 12),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '\$${p.precioVenta.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            iconSize: 24,
+                            icon: const Icon(Icons.remove_red_eye_outlined,
+                                color: Colors.grey),
+                            onPressed: () => _mostrarDetalles(p),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(color: Color(0xFFFF6B81)),
-            ),
-        ],
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFFF6B81),

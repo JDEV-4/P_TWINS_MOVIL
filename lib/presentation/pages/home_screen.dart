@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../presentation/pages/producto_screen.dart';
+// 🔹 Importa aquí tu pantalla de Compras
+// import '../../presentation/pages/compra_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String nombreUsuario;
@@ -26,20 +28,29 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    // Activar animación al construir
     Future.delayed(const Duration(milliseconds: 250), () {
       if (mounted) setState(() => _animate = true);
     });
   }
 
   void _selectSection(String section) {
-    // Navegación a ProductoScreen
     if (section == 'Productos') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const ProductoScreen()),
       );
-    } else {
+    } 
+    // 🔹 Aquí agregamos Compras
+    else if (section == 'Compras') {
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (_) => const CompraScreen()),
+      // );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ir a pantalla de Compras')),
+      );
+    } 
+    else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Sección seleccionada: $section'),
@@ -67,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
           style: GoogleFonts.poppins(fontSize: 15, color: textColor),
         ),
         onTap: () {
-          Navigator.pop(context); // Cierra el drawer
+          Navigator.pop(context);
           _selectSection(section);
         },
       );
@@ -131,8 +142,7 @@ class _HomeScreenState extends State<HomeScreen>
                     end: Alignment.bottomRight,
                   ),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -178,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen>
                     _drawerItem('assets/images/Ventas.png', 'Ventas', 'Ventas'),
                     _drawerItem('assets/images/Usuarios.png', 'Usuarios', 'Usuarios'),
                     _drawerItem('assets/images/Reportes.png', 'Reportes', 'Reportes'),
-                    _drawerItem('assets/images/Ajustes.png', 'Ajustes', 'Ajustes'),
+                    _drawerItem('assets/images/Compra.png', 'Compras', 'Compras'), // <-- Compras
                   ],
                 ),
               ),
@@ -215,8 +225,7 @@ class _HomeScreenState extends State<HomeScreen>
               SafeArea(
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [primaryColor, primaryColor.withOpacity(0.9)],
@@ -290,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen>
                       _buildCard('assets/images/Ventas.png', 'Ventas', 2),
                       _buildCard('assets/images/Usuarios.png', 'Usuarios', 3),
                       _buildCard('assets/images/Reportes.png', 'Reportes', 4),
-                      _buildCard('assets/images/Ajustes.png', 'Ajustes', 5),
+                      _buildCard('assets/images/Compra.png', 'Compras', 5), // <-- Compras
                     ],
                   ),
                 ),

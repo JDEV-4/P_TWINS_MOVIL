@@ -1,4 +1,3 @@
-// lib/data/repository/models/producto_model.dart
 import '../../../domain/entities/producto_entity.dart';
 
 class ProductoModel {
@@ -6,8 +5,6 @@ class ProductoModel {
   final String descripcion;
   final String estadoProducto;
   final String categoria;
-  final String almacen;
-  final String ubicacion;
   final int existencia;
   final double precioCompra;
   final double precioVenta;
@@ -21,8 +18,6 @@ class ProductoModel {
     required this.descripcion,
     required this.estadoProducto,
     required this.categoria,
-    required this.almacen,
-    required this.ubicacion,
     required this.existencia,
     required this.precioCompra,
     required this.precioVenta,
@@ -43,8 +38,6 @@ class ProductoModel {
       descripcion: json['descripcion'] ?? '-',
       estadoProducto: json['estadoProducto'] ?? '-',
       categoria: json['categoria'] ?? '-',
-      almacen: json['almacen'] ?? '-',
-      ubicacion: json['ubicacion'] ?? '-',
       existencia: json['existencia'] != null
           ? int.tryParse(json['existencia'].toString()) ?? 0
           : 0,
@@ -67,8 +60,6 @@ class ProductoModel {
       descripcion: descripcion,
       estadoProducto: estadoProducto,
       categoria: categoria,
-      almacen: almacen,
-      ubicacion: ubicacion,
       existencia: existencia,
       precioCompra: precioCompra,
       precioVenta: precioVenta,

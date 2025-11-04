@@ -1,4 +1,3 @@
-// lib/data/http/producto_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../repository/models/producto_model.dart';
@@ -9,7 +8,7 @@ import '../../domain/entities/producto_entity.dart';
 class ProductoService {
   final String baseUrl;
 
-  ProductoService({this.baseUrl = 'http://192.168.1.82:5138'});
+  ProductoService({this.baseUrl = 'http://192.168.1.83:5138'});
 
   Future<List<ProductoModel>> obtenerProductosActivos(int pageNumber, int pageSize) async {
     final response = await http.get(
@@ -31,14 +30,10 @@ class ProductoService {
       descripcion: producto.descripcion,
       estadoProducto: producto.estadoProducto,
       categoria: producto.categoria,
-      almacen: producto.almacen,
-      ubicacion: producto.ubicacion,
-      existencia: producto.existencia,
-      estadoStock: producto.estadoStock,
     );
 
     final response = await http.post(
-      Uri.parse('$baseUrl/api/Producto'),
+      Uri.parse('$baseUrl/api/Producto/crear'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(request.toJson()),
     );
@@ -50,15 +45,14 @@ class ProductoService {
     }
   }
 
-Future<List<String>> obtenerCategorias() async {
-  final response = await http.get(Uri.parse('$baseUrl/api/Producto/categorias'));
+  Future<List<String>> obtenerCategorias() async {
+    final response = await http.get(Uri.parse('$baseUrl/api/Producto/categorias'));
 
-  if (response.statusCode == 200) {
-    final List data = jsonDecode(response.body);
-    return data.map((item) => item['nombre'].toString()).toList();
-  } else {
-    throw Exception('Error al cargar categorías');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((item) => item['nombre'].toString()).toList();
+    } else {
+      throw Exception('Error al cargar categorías');
+    }
   }
-}
-
 }

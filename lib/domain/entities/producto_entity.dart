@@ -3,8 +3,6 @@ class ProductoEntity {
   final String descripcion;
   final String estadoProducto;
   final String categoria;
-  final String almacen;
-  final String ubicacion;
   final int existencia;
   final double precioCompra;
   final double precioVenta;
@@ -18,8 +16,6 @@ class ProductoEntity {
     required this.descripcion,
     required this.estadoProducto,
     required this.categoria,
-    required this.almacen,
-    required this.ubicacion,
     required this.existencia,
     required this.precioCompra,
     required this.precioVenta,
@@ -29,6 +25,7 @@ class ProductoEntity {
     required this.estadoStock,
   });
 }
+
 
 
 //class ProductoResponse {

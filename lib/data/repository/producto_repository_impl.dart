@@ -1,4 +1,3 @@
-// lib/data/repository/producto_repository_impl.dart
 import '../../domain/entities/producto_entity.dart';
 import '../../domain/repositories/producto_repository.dart';
 import '../http/producto_service.dart';
@@ -22,8 +21,8 @@ class ProductoRepositoryImpl implements ProductoRepository {
     return await service.crearProducto(producto);
   }
 
+  @override
   Future<List<String>> obtenerCategorias() async {
-  return await service.obtenerCategorias();
-}
-
+    return await service.obtenerCategorias();
+  }
 }

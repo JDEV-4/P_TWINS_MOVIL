@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../presentation/pages/producto_screen.dart';
-// 🔹 Importa aquí tu pantalla de Compras
-// import '../../presentation/pages/compra_screen.dart';
+import '../../presentation/pages/compra_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String nombreUsuario;
@@ -40,14 +39,12 @@ class _HomeScreenState extends State<HomeScreen>
         MaterialPageRoute(builder: (_) => const ProductoScreen()),
       );
     } 
-    // 🔹 Aquí agregamos Compras
     else if (section == 'Compras') {
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const CompraScreen()),
-      // );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ir a pantalla de Compras')),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CompraScreen(nombreUsuario: widget.nombreUsuario),
+        ),
       );
     } 
     else {
@@ -188,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen>
                     _drawerItem('assets/images/Ventas.png', 'Ventas', 'Ventas'),
                     _drawerItem('assets/images/Usuarios.png', 'Usuarios', 'Usuarios'),
                     _drawerItem('assets/images/Reportes.png', 'Reportes', 'Reportes'),
-                    _drawerItem('assets/images/Compra.png', 'Compras', 'Compras'), // <-- Compras
+                    _drawerItem('assets/images/Compra.png', 'Compras', 'Compras'),
                   ],
                 ),
               ),
@@ -299,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen>
                       _buildCard('assets/images/Ventas.png', 'Ventas', 2),
                       _buildCard('assets/images/Usuarios.png', 'Usuarios', 3),
                       _buildCard('assets/images/Reportes.png', 'Reportes', 4),
-                      _buildCard('assets/images/Compra.png', 'Compras', 5), // <-- Compras
+                      _buildCard('assets/images/Compra.png', 'Compras', 5),
                     ],
                   ),
                 ),

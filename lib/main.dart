@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// Importa para las localizaciones
 import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'presentation/pages/login_screen.dart';
-import 'presentation/controllers/compra_controller.dart';
-import 'data/http/compra_service.dart';
-import 'data/repository/compra_repository_impl.dart';
-import 'domain/usecases/crear_compra.dart';
 
+// ===== Ejemplo de Provider simple =====
+class UsuarioProvider extends ChangeNotifier {
+  String _nombre = '';
+
+  String get nombre => _nombre;
+
+  void setNombre(String nuevoNombre) {
+    _nombre = nuevoNombre;
+    notifyListeners();
+  }
+}
+
+// ===== Aplicación principal =====
 void main() {
   runApp(const PTWINSApp());
 }
@@ -19,16 +25,9 @@ class PTWINSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Configuración del backend
-    final compraService = CompraService(baseUrl: 'http://192.168.1.82:5138'); // tu backend
-    final compraRepository = CompraRepositoryImpl(service: compraService);
-    final crearCompraUseCase = CrearCompra(compraRepository);
-
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => CompraController(crearCompraUseCase),
-        ),
+        ChangeNotifierProvider(create: (_) => UsuarioProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

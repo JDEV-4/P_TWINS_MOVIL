@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../presentation/pages/producto_screen.dart';
 import '../../presentation/pages/compra_screen.dart';
 
+
 class HomeScreen extends StatefulWidget {
   final String nombreUsuario;
   final String rolUsuario;
@@ -39,14 +40,14 @@ class _HomeScreenState extends State<HomeScreen>
         MaterialPageRoute(builder: (_) => const ProductoScreen()),
       );
     } 
-    else if (section == 'Compras') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CompraScreen(nombreUsuario: widget.nombreUsuario),
-        ),
-      );
-    } 
+   else if (section == 'Compras') {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CompraScreen(nombreUsuario: widget.nombreUsuario),
+    ),
+  );
+}
     else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

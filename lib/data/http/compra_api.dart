@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 class CompraApi {
   final String baseUrl;
 
-  CompraApi({this.baseUrl = 'http://10.237.178.206:5138'});
+  CompraApi({this.baseUrl = 'http://192.168.1.93:5138'});
 
   Uri _buildUri(String endpoint, [Map<String, String>? queryParameters]) {
     final uri = Uri.parse('$baseUrl$endpoint');

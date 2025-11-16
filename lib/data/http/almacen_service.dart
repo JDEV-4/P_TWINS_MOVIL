@@ -7,7 +7,7 @@ import '../repository/models/almacen_model.dart';
 class AlmacenService {
   final String baseUrl;
 
-  AlmacenService({this.baseUrl = 'http://192.168.1.82:5138'});
+  AlmacenService({this.baseUrl = 'http://192.168.1.93:5138'});
 
   Future<List<AlmacenModel>> obtenerAlmacenes() async {
     final response = await http.get(Uri.parse('$baseUrl/api/Almacen/listar'));

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'presentation/pages/login_screen.dart';
+import 'presentation/pages/splash_screen.dart';
+
 
 // ===== Ejemplo de Provider simple =====
 class UsuarioProvider extends ChangeNotifier {
@@ -47,7 +48,7 @@ class PTWINSApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const LoginScreen(),
+        home: const SplashScreen(),
       ),
     );
   }

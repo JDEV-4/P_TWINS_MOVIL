@@ -8,7 +8,7 @@ import '../../domain/entities/producto_entity.dart';
 class ProductoService {
   final String baseUrl;
 
-  ProductoService({this.baseUrl = 'http://10.237.178.206:5138'});
+  ProductoService({this.baseUrl = 'http://192.168.1.93:5138'});
 
   Future<List<ProductoModel>> obtenerProductosActivos(int pageNumber, int pageSize) async {
     final response = await http.get(

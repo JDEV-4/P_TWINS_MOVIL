@@ -1,700 +1,460 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../../data/http/compra_api.dart';
-import '../../domain/models/CompraDTO.dart';
+import 'carrito_screen.dart';
 
 class CompraScreen extends StatefulWidget {
   final String nombreUsuario;
-  const CompraScreen({Key? key, required this.nombreUsuario}) : super(key: key);
+
+  const CompraScreen({super.key, required this.nombreUsuario});
 
   @override
   State<CompraScreen> createState() => _CompraScreenState();
 }
 
-class _CompraScreenState extends State<CompraScreen> with SingleTickerProviderStateMixin {
+class _CompraScreenState extends State<CompraScreen> {
   final CompraApi api = CompraApi();
 
-  // Controllers
-  final TextEditingController usuarioController = TextEditingController();
-  final TextEditingController facturaController = TextEditingController();
-  final TextEditingController searchProductoController = TextEditingController();
-  final TextEditingController searchProveedorController = TextEditingController();
+  final TextEditingController proveedorController = TextEditingController();
+  final TextEditingController productoController = TextEditingController();
+  final TextEditingController cantidadController = TextEditingController();
+  final TextEditingController precioCompraController = TextEditingController();
+  final TextEditingController precioVentaController = TextEditingController();
+  final TextEditingController loteController = TextEditingController();
+  final TextEditingController numeroFacturaController = TextEditingController();
 
-  // Datos
-  List<Map<String, dynamic>> productos = [];
-  List<String> proveedores = [];
+  DateTime fechaEntrada = DateTime.now();
+  DateTime fechaVencimiento = DateTime.now().add(const Duration(days: 30));
 
-  // Estado UI
-  bool loadingProductos = false;
-  bool loadingProveedores = false;
-  String errorProductos = '';
-  String errorProveedores = '';
-  String errorRegistrar = '';
-
-  Map<String, dynamic>? productoSeleccionado;
-  String? proveedorSeleccionado;
-
-  int cantidad = 1;
-  double precioCompra = 0;
-  double precioVenta = 0;
-  String codigoLote = '';
-  DateTime? fechaEntrada;
-  DateTime? fechaVencimiento;
-
-  List<Map<String, dynamic>> detallesCompra = [];
-
-  // Animación
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    usuarioController.text = widget.nombreUsuario;
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-  }
+  List<Map<String, dynamic>> productosAgregados = [];
 
   @override
   void dispose() {
-    usuarioController.dispose();
-    facturaController.dispose();
-    searchProductoController.dispose();
-    searchProveedorController.dispose();
-    _controller.dispose();
+    proveedorController.dispose();
+    productoController.dispose();
+    cantidadController.dispose();
+    precioCompraController.dispose();
+    precioVentaController.dispose();
+    loteController.dispose();
+    numeroFacturaController.dispose();
     super.dispose();
   }
 
-  // ====================
-  // MÉTODOS DE LÓGICA
-  // ====================
-  Future<void> buscarProductos() async {
-    final termino = searchProductoController.text.trim();
-    setState(() {
-      loadingProductos = true;
-      errorProductos = '';
-      productos = [];
-    });
-    try {
-      final results = await api.buscarProductosActivos(termino.isEmpty ? null : termino);
-      setState(() {
-        productos = results;
-      });
-    } catch (e) {
-      setState(() {
-        errorProductos = 'Error al cargar productos: $e';
-      });
-    } finally {
-      setState(() {
-        loadingProductos = false;
-      });
-    }
-  }
-
-  void seleccionarProducto(Map<String, dynamic> prod) {
-    setState(() {
-      productoSeleccionado = prod;
-      precioCompra = (prod['PrecioCompra'] ?? 0.0).toDouble();
-      precioVenta = (prod['PrecioVenta'] ?? 0.0).toDouble();
-      cantidad = 1;
-      codigoLote = '';
-      fechaEntrada = DateTime.now();
-      fechaVencimiento = DateTime.now().add(const Duration(days: 365));
-      productos = [];
-      searchProductoController.text = prod['Producto'] ?? '';
-    });
-  }
-
-  Future<void> buscarProveedores() async {
-    final termino = searchProveedorController.text.trim();
-    setState(() {
-      loadingProveedores = true;
-      errorProveedores = '';
-      proveedores = [];
-    });
-    try {
-      final results = await api.buscarProveedoresPorRazonSocial(termino.isEmpty ? null : termino);
-      setState(() {
-        proveedores = results;
-      });
-    } catch (e) {
-      setState(() {
-        errorProveedores = 'Error al cargar proveedores: $e';
-      });
-    } finally {
-      setState(() {
-        loadingProveedores = false;
-      });
-    }
-  }
-
-  void seleccionarProveedor(String prov) {
-    setState(() {
-      proveedorSeleccionado = prov;
-      proveedores = [];
-      searchProveedorController.text = prov;
-    });
-  }
-
-  void agregarProductoALista() {
-    if (productoSeleccionado == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Seleccione un producto')));
-      return;
-    }
-    if (cantidad <= 0 || precioCompra <= 0 || precioVenta <= 0 || codigoLote.isEmpty || fechaEntrada == null || fechaVencimiento == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Complete todos los campos correctamente')));
-      return;
-    }
-    if (fechaVencimiento!.isBefore(fechaEntrada!)) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('La fecha de vencimiento no puede ser anterior a la de entrada')));
-      return;
-    }
-
-    setState(() {
-      detallesCompra.add({
-        'Producto': productoSeleccionado!['Producto'],
-        'Cantidad': cantidad,
-        'PrecioCompra': precioCompra,
-        'PrecioVenta': precioVenta,
-        'CodigoLote': codigoLote,
-        'FechaEntrada': fechaEntrada!,
-        'FechaVencimiento': fechaVencimiento!,
-      });
-
-      productoSeleccionado = null;
-      cantidad = 1;
-      precioCompra = 0;
-      precioVenta = 0;
-      codigoLote = '';
-      fechaEntrada = null;
-      fechaVencimiento = null;
-      searchProductoController.clear();
-      _controller.forward(from: 0);
-    });
-  }
-
-  void eliminarProductoDeLista(int index) {
-    setState(() {
-      detallesCompra.removeAt(index);
-    });
-  }
-
-  Future<void> registrarCompra() async {
-    if (usuarioController.text.isEmpty) {
-      setState(() {
-        errorRegistrar = 'Debe ingresar el usuario';
-      });
-      return;
-    }
-    if (facturaController.text.isEmpty) {
-      setState(() {
-        errorRegistrar = 'Debe ingresar el número de factura';
-      });
-      return;
-    }
-    if (proveedorSeleccionado == null) {
-      setState(() {
-        errorRegistrar = 'Debe seleccionar un proveedor';
-      });
-      return;
-    }
-    if (detallesCompra.isEmpty) {
-      setState(() {
-        errorRegistrar = 'Debe agregar al menos un producto';
-      });
-      return;
-    }
-
-    setState(() {
-      errorRegistrar = '';
-    });
-
-    final List<String> productosList = detallesCompra.map((d) => d['Producto'] as String).toList();
-    final List<int> cantidades = detallesCompra.map((d) => d['Cantidad'] as int).toList();
-    final List<double> preciosCompra = detallesCompra.map((d) => d['PrecioCompra'] as double).toList();
-    final List<double> preciosVenta = detallesCompra.map((d) => d['PrecioVenta'] as double).toList();
-    final List<String> codigosLote = detallesCompra.map((d) => d['CodigoLote'] as String).toList();
-    final List<DateTime> fechasEntrada = detallesCompra.map((d) => d['FechaEntrada'] as DateTime).toList();
-    final List<DateTime> fechasVencimiento = detallesCompra.map((d) => d['FechaVencimiento'] as DateTime).toList();
-
-    final compra = CompraDTO(
-      proveedor: proveedorSeleccionado!,
-      usuario: usuarioController.text.trim(),
-      numeroFactura: facturaController.text.trim(),
-      productos: productosList,
-      cantidades: cantidades,
-      preciosCompra: preciosCompra,
-      preciosVenta: preciosVenta,
-      codigosLote: codigosLote,
-      fechasEntrada: fechasEntrada,
-      fechasVencimiento: fechasVencimiento,
-    );
-
-    try {
-      final response = await api.registrarCompra(compra.toJson());
+  void agregarProducto() {
+    if (proveedorController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Compra registrada: ${response['mensaje']}')));
+        const SnackBar(content: Text("Debes seleccionar un proveedor")),
+      );
+      return;
+    }
+    if (productoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes seleccionar un producto")),
+      );
+      return;
+    }
+    if (cantidadController.text.isEmpty ||
+        int.tryParse(cantidadController.text) == null ||
+        int.parse(cantidadController.text) <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cantidad inválida")),
+      );
+      return;
+    }
+    if (precioCompraController.text.isEmpty ||
+        double.tryParse(precioCompraController.text) == null ||
+        double.parse(precioCompraController.text) <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Precio de compra inválido")),
+      );
+      return;
+    }
+    if (precioVentaController.text.isEmpty ||
+        double.tryParse(precioVentaController.text) == null ||
+        double.parse(precioVentaController.text) <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Precio de venta inválido")),
+      );
+      return;
+    }
+    if (loteController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes ingresar el código de lote")),
+      );
+      return;
+    }
 
-      setState(() {
-        detallesCompra.clear();
-        searchProveedorController.clear();
-        searchProductoController.clear();
-        proveedorSeleccionado = null;
-        productoSeleccionado = null;
-        facturaController.clear();
+    setState(() {
+      productosAgregados.add({
+        'nombre': productoController.text,
+        'cantidad': int.parse(cantidadController.text),
+        'precioCompra': double.parse(precioCompraController.text),
+        'precioVenta': double.parse(precioVentaController.text),
+        'lote': loteController.text,
+        'fechaEntrada': fechaEntrada,
+        'fechaVencimiento': fechaVencimiento,
       });
+
+      productoController.clear();
+      cantidadController.clear();
+      precioCompraController.clear();
+      precioVentaController.clear();
+      loteController.clear();
+    });
+  }
+
+  void irACarrito() async {
+    if (productosAgregados.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No has agregado productos")),
+      );
+      return;
+    }
+    if (numeroFacturaController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes ingresar el número de factura")),
+      );
+      return;
+    }
+    if (proveedorController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes seleccionar un proveedor")),
+      );
+      return;
+    }
+
+    final productosActualizados =
+        await Navigator.push<List<Map<String, dynamic>>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CarritoScreen(
+          productos: productosAgregados,
+          numeroFactura: numeroFacturaController.text,
+          proveedor: proveedorController.text,
+          usuario: widget.nombreUsuario,
+        ),
+      ),
+    );
+
+    if (productosActualizados != null) {
+      setState(() {
+        productosAgregados = productosActualizados;
+      });
+    }
+  }
+
+  Future<List<String>> buscarProveedores(String termino) async {
+    try {
+      return await api.buscarProveedoresPorRazonSocial(termino);
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      return [];
     }
   }
 
-  Future<void> seleccionarFecha(BuildContext context, bool isEntrada) async {
-    final DateTime initialDate = isEntrada ? (fechaEntrada ?? DateTime.now()) : (fechaVencimiento ?? DateTime.now().add(const Duration(days: 365)));
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(primary: Colors.pinkAccent),
-          dialogBackgroundColor: Colors.white,
-        ),
-        child: child!,
-      ),
-    );
-    if (selected != null) {
-      setState(() {
-        if (isEntrada) {
-          fechaEntrada = selected;
-        } else {
-          fechaVencimiento = selected;
-        }
-      });
+  Future<List<String>> buscarProductos(String termino) async {
+    try {
+      final resultado = await api.buscarProductosActivos(termino);
+      return resultado
+          .where((e) => e['Producto'] != null)
+          .map((e) => e['Producto'].toString())
+          .toList();
+    } catch (e) {
+      return [];
     }
-  }
-
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      fillColor: Colors.white,
-      filled: true,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.pinkAccent, width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    );
-  }
-
-  Widget buildProveedorBusqueda() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: searchProveedorController,
-          decoration: _inputDecoration('Buscar proveedor').copyWith(
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.search, color: Colors.pinkAccent),
-              onPressed: buscarProveedores,
-            ),
-          ),
-          onChanged: (val) {
-            if (val.isEmpty) {
-              setState(() {
-                proveedores = [];
-              });
-            }
-          },
-        ),
-        if (loadingProveedores) const LinearProgressIndicator(),
-        if (errorProveedores.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(errorProveedores, style: const TextStyle(color: Colors.red)),
-          ),
-        if (proveedores.isNotEmpty)
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Column(
-              children: proveedores.map((prov) => ListTile(
-                title: Text(prov),
-                onTap: () => seleccionarProveedor(prov),
-                trailing: const Icon(Icons.check_circle_outline, color: Colors.green),
-              )).toList(),
-            ),
-          ),
-        if (proveedorSeleccionado != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Proveedor seleccionado: ${proveedorSeleccionado!}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.pinkAccent)),
-          ),
-      ],
-    );
-  }
-
-  Widget buildProductoBusqueda() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: searchProductoController,
-          decoration: _inputDecoration('Buscar producto').copyWith(
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.search, color: Colors.pinkAccent),
-              onPressed: buscarProductos,
-            ),
-          ),
-          onChanged: (val) {
-            if (val.isEmpty) {
-              setState(() {
-                productos = [];
-              });
-            }
-          },
-        ),
-        if (loadingProductos) const LinearProgressIndicator(),
-        if (errorProductos.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(errorProductos, style: const TextStyle(color: Colors.red)),
-          ),
-        if (productos.isNotEmpty)
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Column(
-              children: productos.map((prod) => ListTile(
-                title: Text(prod['Producto'] ?? ''),
-                subtitle: Text('Compra: \$${prod['PrecioCompra'] ?? 0.0}, Venta: \$${prod['PrecioVenta'] ?? 0.0}'),
-                onTap: () => seleccionarProducto(prod),
-                trailing: const Icon(Icons.add_shopping_cart, color: Colors.pinkAccent),
-              )).toList(),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget buildDetalleProductoCard() {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.pink[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Detalles de ${productoSeleccionado?['Producto'] ?? 'Producto'}',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.pink),
-              textAlign: TextAlign.center,
-            ),
-            const Divider(color: Colors.pinkAccent),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDecoration('Cantidad'),
-                    controller: TextEditingController(text: cantidad.toString()),
-                    onChanged: (val) => cantidad = int.tryParse(val) ?? 1,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDecoration('Precio Compra'),
-                    controller: TextEditingController(text: precioCompra.toString()),
-                    onChanged: (val) => precioCompra = double.tryParse(val) ?? 0.0,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDecoration('Precio Venta'),
-                    controller: TextEditingController(text: precioVenta.toString()),
-                    onChanged: (val) => precioVenta = double.tryParse(val) ?? 0.0,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: _inputDecoration('Código Lote'),
-              onChanged: (val) => codigoLote = val,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.calendar_today, color: Colors.pinkAccent),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.pinkAccent,
-                      side: const BorderSide(color: Colors.pinkAccent),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () => seleccionarFecha(context, true),
-                    label: Text(fechaEntrada != null
-                        ? 'Entrada: ${DateFormat('dd/MM/yyyy').format(fechaEntrada!)}'
-                        : 'Fecha entrada'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.date_range, color: Colors.pinkAccent),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.pinkAccent,
-                      side: const BorderSide(color: Colors.pinkAccent),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () => seleccionarFecha(context, false),
-                    label: Text(fechaVencimiento != null
-                        ? 'Venc: ${DateFormat('dd/MM/yyyy').format(fechaVencimiento!)}'
-                        : 'Fecha vencimiento'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.playlist_add),
-              label: const Text('Añadir a la Compra', style: TextStyle(fontSize: 16)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.pinkAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: agregarProductoALista,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildProductosTarjetas() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Productos a Registrar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.pinkAccent)),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 230,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: detallesCompra.length,
-            itemBuilder: (context, index) {
-              final detalle = detallesCompra[index];
-              return ScaleTransition(
-                scale: _animation,
-                child: Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  color: Colors.white,
-                  child: Container(
-                    width: 220,
-                    padding: const EdgeInsets.all(16),
-                    child: Stack(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(detalle['Producto'],
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.pinkAccent)),
-                            const Divider(height: 10, thickness: 1, color: Colors.grey),
-                            Text('Cant: **${detalle['Cantidad']}**'),
-                            Text('Compra: **\$${detalle['PrecioCompra'].toStringAsFixed(2)}**'),
-                            Text('Venta: **\$${detalle['PrecioVenta'].toStringAsFixed(2)}**'),
-                            Text('Lote: **${detalle['CodigoLote']}**'),
-                            Text('Entrada: **${DateFormat('dd/MM/yyyy').format(detalle['FechaEntrada'])}**'),
-                            Text('Venc: **${DateFormat('dd/MM/yyyy').format(detalle['FechaVencimiento'])}**'),
-                          ],
-                        ),
-                        Positioned(
-                          top: -10,
-                          right: -10,
-                          child: IconButton(
-                            icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
-                            onPressed: () => eliminarProductoDeLista(index),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    const Color primaryColor = Color(0xFFFF6B81);
+    const Color backgroundColor = Color(0xFFFFF8F8);
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Registrar Compra', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.pinkAccent,
-        elevation: 6,
+        backgroundColor: primaryColor,
+        title: const Text(
+          "Registrar Compra",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Card(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24)),
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSection(
+                            "Proveedor",
+                            _buildTypeAheadField(
+                              proveedorController,
+                              buscarProveedores,
+                              "Buscar proveedor",
+                              Icons.business,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildSection(
+                            "Producto",
+                            _buildTypeAheadField(
+                              productoController,
+                              buscarProductos,
+                              "Buscar producto",
+                              Icons.inventory,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildSimpleField(
+                                    "Cantidad",
+                                    cantidadController,
+                                    "1",
+                                    Icons.numbers),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildSimpleField(
+                                    "Precio Compra",
+                                    precioCompraController,
+                                    "0.00",
+                                    Icons.attach_money),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildSimpleField(
+                                    "Precio Venta",
+                                    precioVentaController,
+                                    "0.00",
+                                    Icons.trending_up),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildSection(
+                            "Código de Lote",
+                            _buildSimpleField(
+                              "",
+                              loteController,
+                              "",
+                              Icons.qr_code,
+                              keyboardType: TextInputType.text,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildSection(
+                            "Número de Factura",
+                            _buildSimpleField(
+                              "",
+                              numeroFacturaController,
+                              "FACT-0001",
+                              Icons.receipt_long,
+                              keyboardType: TextInputType.text,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildSection(
+                                  "Fecha Entrada",
+                                  _buildDateField(
+                                      fechaEntrada,
+                                      (picked) =>
+                                          setState(() => fechaEntrada = picked)),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildSection(
+                                  "Fecha Vencimiento",
+                                  _buildDateField(
+                                      fechaVencimiento,
+                                      (picked) => setState(
+                                          () => fechaVencimiento = picked)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // BOTONES: solo Agregar Producto y Ver Carrito
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGradientButton(
+                      "Agregar Producto",
+                      Icons.add_circle,
+                      agregarProducto,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildGradientButton(
+                      "Ver Carrito",
+                      Icons.shopping_cart,
+                      irACarrito,
+                      isSecondary: true,
+                      isEnabled: productosAgregados.isNotEmpty,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    );
+  }
+
+  // ---------------- WIDGETS ----------------
+  Widget _buildTypeAheadField(
+      TextEditingController controller,
+      Future<List<String>> Function(String) searchFunction,
+      String hint,
+      IconData icon) {
+    return TypeAheadField<String>(
+      textFieldConfiguration: TextFieldConfiguration(
+        controller: controller,
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon, color: const Color(0xFFFF6B81)),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFFF6B81))),
+        ),
+      ),
+      suggestionsCallback: (pattern) async {
+        if (pattern.isEmpty) return [];
+        return await searchFunction(pattern);
+      },
+      itemBuilder: (context, String suggestion) {
+        return ListTile(title: Text(suggestion));
+      },
+      onSuggestionSelected: (String suggestion) {
+        controller.text = suggestion;
+      },
+      noItemsFoundBuilder: (context) => const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text('No se encontraron resultados'),
+      ),
+    );
+  }
+
+  Widget _buildSection(String label, Widget field) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label.isNotEmpty)
+          Text(label,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const SizedBox(height: 6),
+        field,
+      ],
+    );
+  }
+
+  Widget _buildSimpleField(
+    String label,
+    TextEditingController controller,
+    String hint,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.number,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 16, color: Colors.black87),
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, color: const Color(0xFFFF6B81)),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFFF6B81))),
+      ),
+    );
+  }
+
+  Widget _buildDateField(DateTime date, ValueChanged<DateTime> onPicked) {
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    return InkWell(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: date,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2035),
+        );
+        if (picked != null) onPicked(picked);
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFFF6B81))),
+        ),
+        child: Row(
           children: [
-            // Información General
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Información General',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.pinkAccent),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: usuarioController,
-                            decoration: _inputDecoration('Usuario'),
-                            enabled: false,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: facturaController,
-                            decoration: _inputDecoration('N° Factura'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Selección de Proveedor
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Selección de Proveedor',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.pinkAccent),
-                    ),
-                    const SizedBox(height: 12),
-                    buildProveedorBusqueda(),
-                  ],
-                ),
-              ),
-            ),
-
-            // Añadir Producto
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Añadir Producto',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.pinkAccent),
-                    ),
-                    const SizedBox(height: 12),
-                    buildProductoBusqueda(),
-                    if (productoSeleccionado != null) buildDetalleProductoCard(),
-                  ],
-                ),
-              ),
-            ),
-
-            // Productos en la compra
-            if (detallesCompra.isNotEmpty)
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                color: Colors.white,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: buildProductosTarjetas(),
-                ),
-              ),
-
-            const SizedBox(height: 20),
-
-            // Mensaje de error
-            if (errorRegistrar.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 15.0),
-                child: Text(errorRegistrar, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-              ),
-
-            // Botón Registrar
-            ElevatedButton.icon(
-              icon: const Icon(Icons.check),
-              label: const Text('REGISTRAR COMPRA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.pinkAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 5,
-              ),
-              onPressed: registrarCompra,
-            ),
-            const SizedBox(height: 30),
+            const Icon(Icons.calendar_today, color: Color(0xFFFF6B81)),
+            const SizedBox(width: 10),
+            Text(dateFormat.format(date),
+                style: const TextStyle(fontSize: 16, color: Colors.black87)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientButton(
+    String label,
+    IconData icon,
+    VoidCallback onPressed, {
+    bool isSecondary = false,
+    bool isEnabled = true,
+  }) {
+    return SizedBox(
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: isEnabled ? onPressed : null,
+        icon: Icon(icon, color: Colors.white),
+        label: Text(label,
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 15, color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSecondary
+              ? (isEnabled ? Colors.grey.shade700 : Colors.grey.shade400)
+              : (isEnabled ? const Color(0xFFFF6B81) : Colors.grey.shade400),
         ),
       ),
     );

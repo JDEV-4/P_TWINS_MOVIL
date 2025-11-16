@@ -17,7 +17,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
   late ProductoController controller;
 
   // ----- Productos -----
-  List<ProductoEntity> productos = [];
+  ValueNotifier<List<ProductoEntity>> productosNotifier = ValueNotifier([]);
   int pageNumber = 1;
   final int pageSize = 5;
   bool isLoading = false;
@@ -59,6 +59,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    productosNotifier.dispose();
     super.dispose();
   }
 
@@ -71,11 +72,13 @@ class _ProductoScreenState extends State<ProductoScreen> {
     try {
       final nuevosProductos =
           await controller.fetchProductos(pageNumber, pageSize);
-      setState(() {
-        productos.addAll(nuevosProductos);
-        pageNumber++;
-        if (nuevosProductos.length < pageSize) hasMore = false;
-      });
+      if (pageNumber == 1) {
+        productosNotifier.value = nuevosProductos;
+      } else {
+        productosNotifier.value = [...productosNotifier.value, ...nuevosProductos];
+      }
+      pageNumber++;
+      if (nuevosProductos.length < pageSize) hasMore = false;
     } catch (e) {
       debugPrint('Error al cargar productos: $e');
     } finally {
@@ -85,7 +88,6 @@ class _ProductoScreenState extends State<ProductoScreen> {
 
   Future<void> _refrescarProductos() async {
     setState(() {
-      productos.clear();
       pageNumber = 1;
       hasMore = true;
     });
@@ -307,7 +309,7 @@ class _ProductoScreenState extends State<ProductoScreen> {
                         );
                         Navigator.pop(context);
 
-                        // 🔹 Esperar recarga de productos
+                        // 🔹 Refrescar automáticamente la lista después de agregar
                         await _refrescarProductos();
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -379,110 +381,121 @@ class _ProductoScreenState extends State<ProductoScreen> {
       body: RefreshIndicator(
         color: const Color(0xFFFF6B81),
         onRefresh: _refrescarProductos,
-        child: ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(10),
-          itemCount: productos.length + (isLoading ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == productos.length) {
-              return const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Center(
-                  child: CircularProgressIndicator(color: Color(0xFFFF6B81)),
-                ),
+        child: ValueListenableBuilder<List<ProductoEntity>>(
+          valueListenable: productosNotifier,
+          builder: (context, productos, _) {
+            if (productos.isEmpty && !isLoading) {
+              return const Center(
+                child: Text('No hay productos disponibles.'),
               );
             }
 
-            final p = productos[index];
-            return Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p.nombre,
-                            style: const TextStyle(
-                              fontFamily: 'NotoSans',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Color(0xFFFF6B81),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            p.descripcion,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'NotoSans',
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFE5E8),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              p.categoria,
-                              style: const TextStyle(
-                                fontFamily: 'NotoSans',
-                                fontSize: 12,
-                                color: Color(0xFFFF6B81),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+            return ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(10),
+              itemCount: productos.length + (isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == productos.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Center(
+                      child: CircularProgressIndicator(color: Color(0xFFFF6B81)),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
+                  );
+                }
+
+                final p = productos[index];
+                return Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: Colors.white,
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    child: Row(
                       children: [
-                        Text(
-                          '\$${p.precioVenta.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontFamily: 'NotoSans',
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                            color: Colors.green,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p.nombre,
+                                style: const TextStyle(
+                                  fontFamily: 'NotoSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFFFF6B81),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                p.descripcion,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'NotoSans',
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFE5E8),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  p.categoria,
+                                  style: const TextStyle(
+                                    fontFamily: 'NotoSans',
+                                    fontSize: 12,
+                                    color: Color(0xFFFF6B81),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            iconSize: 24,
-                            icon: const Icon(Icons.remove_red_eye_outlined,
-                                color: Colors.grey),
-                            onPressed: () => _mostrarDetalles(p),
-                          ),
+                        const SizedBox(width: 12),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '\$${p.precioVenta.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontFamily: 'NotoSans',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                                color: Colors.green,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 24,
+                                icon: const Icon(Icons.remove_red_eye_outlined,
+                                    color: Colors.grey),
+                                onPressed: () => _mostrarDetalles(p),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         ),

@@ -23,7 +23,6 @@ class CompraDTO {
     required this.fechasVencimiento,
   });
 
-  // Este método convierte las listas a strings CSV, para enviar al SP correctamente
   Map<String, dynamic> toJsonForSP() => {
         "NombreProveedor": proveedor,
         "NombreUsuario": usuario,

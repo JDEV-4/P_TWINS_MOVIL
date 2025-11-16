@@ -35,7 +35,8 @@ class _CarritoScreenState extends State<CarritoScreen> {
     productos = List<Map<String, dynamic>>.from(widget.productos);
   }
 
-  double get subtotal => productos.fold(0, (sum, p) => sum + (p['precioCompra'] * p['cantidad']));
+  double get subtotal =>
+      productos.fold(0, (sum, p) => sum + (p['precioCompra'] * p['cantidad']));
   double get iva => subtotal * 0.13;
   double get total => subtotal + iva;
 
@@ -43,6 +44,12 @@ class _CarritoScreenState extends State<CarritoScreen> {
     setState(() {
       productos.removeAt(index);
     });
+
+    if (productos.isEmpty) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) Navigator.pop(context, productos);
+      });
+    }
   }
 
   void modificarProducto(int index) async {
@@ -95,7 +102,8 @@ class _CarritoScreenState extends State<CarritoScreen> {
                   const Center(
                     child: Text(
                       "Modificar producto",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -117,13 +125,15 @@ class _CarritoScreenState extends State<CarritoScreen> {
                   _buildDatePicker(
                     "Fecha de entrada",
                     fechaEntrada,
-                    (picked) => setModalState(() => fechaEntrada = picked ?? fechaEntrada),
+                    (picked) =>
+                        setModalState(() => fechaEntrada = picked ?? fechaEntrada),
                   ),
                   const SizedBox(height: 10),
                   _buildDatePicker(
                     "Fecha de vencimiento",
                     fechaVencimiento,
-                    (picked) => setModalState(() => fechaVencimiento = picked ?? fechaVencimiento),
+                    (picked) =>
+                        setModalState(() => fechaVencimiento = picked ?? fechaVencimiento),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -134,8 +144,10 @@ class _CarritoScreenState extends State<CarritoScreen> {
                           productos[index] = {
                             'nombre': nombreController.text.trim(),
                             'cantidad': int.tryParse(cantidadController.text) ?? 1,
-                            'precioCompra': double.tryParse(precioCompraController.text) ?? 0,
-                            'precioVenta': double.tryParse(precioVentaController.text) ?? 0,
+                            'precioCompra':
+                                double.tryParse(precioCompraController.text) ?? 0,
+                            'precioVenta':
+                                double.tryParse(precioVentaController.text) ?? 0,
                             'lote': loteController.text.trim(),
                             'fechaEntrada': fechaEntrada,
                             'fechaVencimiento': fechaVencimiento,
@@ -164,8 +176,6 @@ class _CarritoScreenState extends State<CarritoScreen> {
     );
   }
 
-  // -------------------------------
-  // Función para enviar la compra al backend
   Future<void> registrarCompraBackend() async {
     if (productos.isEmpty) {
       _mostrarMensaje(context, "No hay productos para registrar");
@@ -177,13 +187,18 @@ class _CarritoScreenState extends State<CarritoScreen> {
         proveedor: widget.proveedor,
         usuario: widget.usuario,
         numeroFactura: widget.numeroFactura,
-        productos: List<String>.from(productos.map((p) => p['nombre'].toString())),
+        productos:
+            List<String>.from(productos.map((p) => p['nombre'].toString())),
         cantidades: List<int>.from(productos.map((p) => p['cantidad'] as int)),
-        preciosCompra: List<double>.from(productos.map((p) => p['precioCompra'] as double)),
-        preciosVenta: List<double>.from(productos.map((p) => p['precioVenta'] as double)),
+        preciosCompra:
+            List<double>.from(productos.map((p) => p['precioCompra'] as double)),
+        preciosVenta:
+            List<double>.from(productos.map((p) => p['precioVenta'] as double)),
         codigosLote: List<String>.from(productos.map((p) => p['lote'] ?? '')),
-        fechasEntrada: List<DateTime>.from(productos.map((p) => p['fechaEntrada'] as DateTime)),
-        fechasVencimiento: List<DateTime>.from(productos.map((p) => p['fechaVencimiento'] as DateTime)),
+        fechasEntrada:
+            List<DateTime>.from(productos.map((p) => p['fechaEntrada'] as DateTime)),
+        fechasVencimiento: List<DateTime>.from(
+            productos.map((p) => p['fechaVencimiento'] as DateTime)),
       );
 
       final api = CompraApi();
@@ -198,68 +213,62 @@ class _CarritoScreenState extends State<CarritoScreen> {
   }
 
   void finalizarCompra() {
-  if (productos.isEmpty) return;
+    if (productos.isEmpty) return;
 
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-    ),
-    builder: (context) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.shopping_bag_outlined,
-              color: Color(0xFFFF6B81), size: 56),
-          const SizedBox(height: 12),
-          const Text(
-            "¿Qué deseas hacer?",
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black87),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Selecciona una opción para continuar con la compra",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black54, fontSize: 14),
-          ),
-          const SizedBox(height: 22),
-          
-          // Botón: Solo guardar compra
-          _actionButton(
-            icon: Icons.save_alt_rounded,
-            text: "Solo guardar compra",
-            color: const Color(0xFFFF6B81),
-            onTap: () async {
-              Navigator.pop(context);
-              await registrarCompraBackend(); // lógica del backend aquí
-            },
-          ),
-          const SizedBox(height: 12),
-          
-          // Botón: Crear factura y registrar
-          _actionButton(
-            icon: Icons.receipt_long_outlined,
-            text: "Crear factura y registrar",
-            color: Colors.deepPurpleAccent,
-            onTap: () async {
-              Navigator.pop(context);
-              await _crearFacturaPDF();
-              await registrarCompraBackend();
-            },
-          ),
-        ],
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
-    ),
-  );
-}
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.shopping_bag_outlined,
+                color: Color(0xFFFF6B81), size: 56),
+            const SizedBox(height: 12),
+            const Text(
+              "¿Qué deseas hacer?",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black87),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Selecciona una opción para continuar con la compra",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, fontSize: 14),
+            ),
+            const SizedBox(height: 22),
+            _actionButton(
+              icon: Icons.save_alt_rounded,
+              text: "Solo guardar compra",
+              color: const Color(0xFFFF6B81),
+              onTap: () async {
+                Navigator.pop(context);
+                await registrarCompraBackend();
+              },
+            ),
+            const SizedBox(height: 12),
+            _actionButton(
+              icon: Icons.receipt_long_outlined,
+              text: "Crear factura y registrar",
+              color: Colors.deepPurpleAccent,
+              onTap: () async {
+                Navigator.pop(context);
+                await _crearFacturaPDF();
+                await registrarCompraBackend();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-
-  // -------------------------------
   Future<void> _crearFacturaPDF() async {
     try {
       final pdf = pw.Document();
@@ -327,7 +336,8 @@ class _CarritoScreenState extends State<CarritoScreen> {
                   '\$${subtotalProd.toStringAsFixed(2)}',
                 ];
               }).toList(),
-              border: pw.TableBorder.all(width: 0.5, color: PdfColor.fromInt(0xFFCCCCCC)),
+              border:
+                  pw.TableBorder.all(width: 0.5, color: PdfColor.fromInt(0xFFCCCCCC)),
               headerStyle: pw.TextStyle(
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColor.fromInt(0xFFFF6B81),
@@ -520,97 +530,129 @@ class _CarritoScreenState extends State<CarritoScreen> {
     const Color primaryColor = Color(0xFFFF6B81);
     const Color backgroundColor = Color(0xFFFFF8F8);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        title: const Text("Carrito de Productos",
-            style:
-                TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: productos.isEmpty
-          ? const Center(
-              child: Text(
-                "No hay productos agregados",
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: productos.length,
-                      itemBuilder: (context, index) {
-                        final p = productos[index];
-                        return Card(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18)),
-                          elevation: 3,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  const Color(0xFFFF6B81).withOpacity(0.15),
-                              child: const Icon(Icons.icecream,
-                                  color: Color(0xFFFF6B81)),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, productos);
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        appBar: AppBar(
+          backgroundColor: primaryColor,
+          title: const Text("Carrito de Productos",
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          centerTitle: true,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: productos.isEmpty
+            ? const Center(
+                child: Text("No hay productos agregados",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              )
+            : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: productos.length,
+                        itemBuilder: (context, index) {
+                          final p = productos[index];
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            title: Text(
-                              p['nombre'],
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                                "Cantidad: ${p['cantidad']} | Precio: \$${p['precioCompra']}"),
-                            trailing: PopupMenuButton<String>(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16)),
-                              onSelected: (value) {
-                                if (value == 'modificar') {
-                                  modificarProducto(index);
-                                } else if (value == 'eliminar') {
-                                  eliminarProducto(index);
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'modificar',
-                                  child: Row(
+                            elevation: 3,
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  colors: [Colors.white, Colors.grey[100]!],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          p['nombre'],
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "Cantidad: ${p['cantidad']}",
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black54),
+                                        ),
+                                        Text(
+                                          "Precio: \$${p['precioCompra'].toStringAsFixed(2)}",
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black54),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Row(
                                     children: [
-                                      Icon(Icons.edit,
-                                          color: Color(0xFFFF6B81)),
-                                      SizedBox(width: 8),
-                                      Text("Modificar")
+                                      InkWell(
+                                        onTap: () => modificarProducto(index),
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFF6B81)
+                                                .withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.edit,
+                                              color: Color(0xFFFF6B81)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      InkWell(
+                                        onTap: () => eliminarProducto(index),
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.redAccent
+                                                .withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.delete,
+                                              color: Colors.redAccent),
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'eliminar',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete, color: Colors.red),
-                                      SizedBox(width: 8),
-                                      Text("Eliminar")
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildResumen(),
-                ],
+                    _buildResumen(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

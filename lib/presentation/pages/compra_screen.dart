@@ -42,6 +42,18 @@ class _CompraScreenState extends State<CompraScreen> {
   }
 
   void agregarProducto() {
+    if (numeroFacturaController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes ingresar el número de factura")),
+      );
+      return;
+    }
+    if (loteController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes ingresar el código de lote")),
+      );
+      return;
+    }
     if (proveedorController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Debes seleccionar un proveedor")),
@@ -78,12 +90,6 @@ class _CompraScreenState extends State<CompraScreen> {
       );
       return;
     }
-    if (loteController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Debes ingresar el código de lote")),
-      );
-      return;
-    }
 
     setState(() {
       productosAgregados.add({
@@ -100,7 +106,6 @@ class _CompraScreenState extends State<CompraScreen> {
       cantidadController.clear();
       precioCompraController.clear();
       precioVentaController.clear();
-      loteController.clear();
     });
   }
 
@@ -108,18 +113,6 @@ class _CompraScreenState extends State<CompraScreen> {
     if (productosAgregados.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No has agregado productos")),
-      );
-      return;
-    }
-    if (numeroFacturaController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Debes ingresar el número de factura")),
-      );
-      return;
-    }
-    if (proveedorController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Debes seleccionar un proveedor")),
       );
       return;
     }
@@ -199,6 +192,37 @@ class _CompraScreenState extends State<CompraScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // Número de Factura
+                          _buildSection(
+                            "Número de Factura",
+                            _buildSimpleField(
+                              "Número de Factura",
+                              numeroFacturaController,
+                              "FACT-0001",
+                              Icons.receipt_long,
+                              keyboardType: TextInputType.text,
+                              textCapitalization: TextCapitalization.characters,
+                              toUpperCase: true,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Código de Lote
+                          _buildSection(
+                            "Código de Lote",
+                            _buildSimpleField(
+                              "Código de Lote",
+                              loteController,
+                              "",
+                              Icons.qr_code,
+                              keyboardType: TextInputType.text,
+                              textCapitalization: TextCapitalization.characters,
+                              toUpperCase: true,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Proveedor
                           _buildSection(
                             "Proveedor",
                             _buildTypeAheadField(
@@ -209,6 +233,8 @@ class _CompraScreenState extends State<CompraScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
+
+                          // Producto
                           _buildSection(
                             "Producto",
                             _buildTypeAheadField(
@@ -219,65 +245,60 @@ class _CompraScreenState extends State<CompraScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
+
+                          // Cantidad / Precio Compra / Precio Venta
                           Row(
                             children: [
                               Expanded(
-                                child: _buildSimpleField(
+                                child: _buildSection(
+                                  "Cantidad",
+                                  _buildSimpleField(
                                     "Cantidad",
                                     cantidadController,
                                     "1",
-                                    Icons.numbers),
+                                    Icons.numbers,
+                                  ),
+                                ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: _buildSimpleField(
+                                child: _buildSection(
+                                  "Precio C.",
+                                  _buildSimpleField(
                                     "Precio Compra",
                                     precioCompraController,
                                     "0.00",
-                                    Icons.attach_money),
+                                    Icons.attach_money,
+                                  ),
+                                ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: _buildSimpleField(
+                                child: _buildSection(
+                                  "Precio Venta",
+                                  _buildSimpleField(
                                     "Precio Venta",
                                     precioVentaController,
                                     "0.00",
-                                    Icons.trending_up),
+                                    Icons.trending_up,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildSection(
-                            "Código de Lote",
-                            _buildSimpleField(
-                              "",
-                              loteController,
-                              "",
-                              Icons.qr_code,
-                              keyboardType: TextInputType.text,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildSection(
-                            "Número de Factura",
-                            _buildSimpleField(
-                              "",
-                              numeroFacturaController,
-                              "FACT-0001",
-                              Icons.receipt_long,
-                              keyboardType: TextInputType.text,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+
+                          // Fechas
                           Row(
                             children: [
                               Expanded(
                                 child: _buildSection(
                                   "Fecha Entrada",
                                   _buildDateField(
-                                      fechaEntrada,
-                                      (picked) =>
-                                          setState(() => fechaEntrada = picked)),
+                                    fechaEntrada,
+                                    (picked) =>
+                                        setState(() => fechaEntrada = picked),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -285,9 +306,10 @@ class _CompraScreenState extends State<CompraScreen> {
                                 child: _buildSection(
                                   "Fecha Vencimiento",
                                   _buildDateField(
-                                      fechaVencimiento,
-                                      (picked) => setState(
-                                          () => fechaVencimiento = picked)),
+                                    fechaVencimiento,
+                                    (picked) =>
+                                        setState(() => fechaVencimiento = picked),
+                                  ),
                                 ),
                               ),
                             ],
@@ -299,12 +321,13 @@ class _CompraScreenState extends State<CompraScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // BOTONES: solo Agregar Producto y Ver Carrito
+
+              // Botones
               Row(
                 children: [
                   Expanded(
                     child: _buildGradientButton(
-                      "Agregar Producto",
+                      "Agregar",
                       Icons.add_circle,
                       agregarProducto,
                     ),
@@ -312,8 +335,8 @@ class _CompraScreenState extends State<CompraScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildGradientButton(
-                      "Ver Carrito",
-                      Icons.shopping_cart,
+                      "Ver", 
+                      Icons.list_alt,
                       irACarrito,
                       isSecondary: true,
                       isEnabled: productosAgregados.isNotEmpty,
@@ -338,17 +361,7 @@ class _CompraScreenState extends State<CompraScreen> {
       textFieldConfiguration: TextFieldConfiguration(
         controller: controller,
         style: const TextStyle(fontSize: 16, color: Colors.black87),
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(icon, color: const Color(0xFFFF6B81)),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFFF6B81))),
-        ),
+        decoration: _buildInputDecoration(hint, icon),
       ),
       suggestionsCallback: (pattern) async {
         if (pattern.isEmpty) return [];
@@ -367,14 +380,32 @@ class _CompraScreenState extends State<CompraScreen> {
     );
   }
 
+  InputDecoration _buildInputDecoration(String hint, IconData icon) {
+    const borderColor = Color(0xFFFF6B81);
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon, color: borderColor),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: borderColor, width: 2),
+      ),
+    );
+  }
+
   Widget _buildSection(String label, Widget field) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label.isNotEmpty)
           Text(label,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 6),
         field,
       ],
@@ -387,20 +418,23 @@ class _CompraScreenState extends State<CompraScreen> {
     String hint,
     IconData icon, {
     TextInputType keyboardType = TextInputType.number,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    bool toUpperCase = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
       style: const TextStyle(fontSize: 16, color: Colors.black87),
-      decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFFFF6B81)),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFFF6B81))),
-      ),
+      onChanged: toUpperCase
+          ? (value) {
+              controller.value = controller.value.copyWith(
+                text: value.toUpperCase(),
+                selection: controller.selection,
+              );
+            }
+          : null,
+      decoration: _buildInputDecoration(hint, icon),
     );
   }
 
@@ -417,20 +451,10 @@ class _CompraScreenState extends State<CompraScreen> {
         if (picked != null) onPicked(picked);
       },
       child: InputDecorator(
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFFF6B81))),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.calendar_today, color: Color(0xFFFF6B81)),
-            const SizedBox(width: 10),
-            Text(dateFormat.format(date),
-                style: const TextStyle(fontSize: 16, color: Colors.black87)),
-          ],
+        decoration: _buildInputDecoration("", Icons.calendar_today),
+        child: Text(
+          dateFormat.format(date),
+          style: const TextStyle(fontSize: 16, color: Colors.black87),
         ),
       ),
     );

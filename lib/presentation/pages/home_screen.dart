@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../presentation/pages/producto_screen.dart';
 import '../../presentation/pages/compra_screen.dart';
+import '../../data/http/api_service.dart';
+import '../pages/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String nombreUsuario;
-  final String rolUsuario;
-  final String sexoUsuario;
+  final String rolUsuario; // Ej: "1" o "2"
+  final String sexoUsuario; // "H" o "M"
 
   const HomeScreen({
     super.key,
@@ -29,6 +31,20 @@ class _HomeScreenState extends State<HomeScreen>
     Future.delayed(const Duration(milliseconds: 250), () {
       if (mounted) setState(() => _animate = true);
     });
+  }
+
+  // Convierte el rol a un texto amigable
+  String getRolTexto(String rol) {
+    switch (rol.toLowerCase()) {
+      case 'vendedor':
+      case '1':
+        return 'Vendedor';
+      case 'administrador':
+      case '2':
+        return 'Administrador';
+      default:
+        return 'Usuario';
+    }
   }
 
   void _selectSection(String section) {
@@ -54,9 +70,80 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _abrirPerfil() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        final rolTexto = getRolTexto(widget.rolUsuario);
+        final avatarAsset = widget.sexoUsuario.toUpperCase() == 'H'
+            ? 'assets/images/Hombre.png'
+            : 'assets/images/Mujer.png';
+
+        return Padding(
+          padding: EdgeInsets.only(
+              top: 24,
+              left: 24,
+              right: 24,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 5,
+                width: 40,
+                decoration: BoxDecoration(
+                    color: Colors.grey[300], borderRadius: BorderRadius.circular(12)),
+              ),
+              const SizedBox(height: 16),
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: AssetImage(avatarAsset),
+              ),
+              const SizedBox(height: 16),
+              Text(widget.nombreUsuario,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(rolTexto, style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Limpiar token o datos de sesión
+                    await ApiService().logout();
+
+                    // Cierra el modal
+                    Navigator.pop(context);
+
+                    // Navegar a Login y reemplazar historial
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6B81),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16))),
+                  child: const Text("Cerrar sesión",
+                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Colores según ProductoScreen
     const Color primaryColor = Color(0xFFFF6B81);
     const Color accentColor = Color(0xFFFFF8F8);
     const Color textColor = Color(0xFF333333);
@@ -114,8 +201,7 @@ class _HomeScreenState extends State<HomeScreen>
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               decoration: const BoxDecoration(
-                color: primaryColor, // Header sin degradado para simplificar
-                borderRadius: BorderRadius.zero, // Quitar bordes redondeados
+                color: primaryColor,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -145,15 +231,17 @@ class _HomeScreenState extends State<HomeScreen>
                           size: 26,
                         ),
                       ),
-                      // Avatar sin acción
                       Padding(
                         padding: const EdgeInsets.only(left: 6),
-                        child: CircleAvatar(
-                          radius: 23,
-                          backgroundColor: Colors.white.withOpacity(0.85),
+                        child: GestureDetector(
+                          onTap: _abrirPerfil,
                           child: CircleAvatar(
-                            radius: 21,
-                            backgroundImage: AssetImage(avatarAsset),
+                            radius: 23,
+                            backgroundColor: Colors.white.withOpacity(0.85),
+                            child: CircleAvatar(
+                              radius: 21,
+                              backgroundImage: AssetImage(avatarAsset),
+                            ),
                           ),
                         ),
                       ),
